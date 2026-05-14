@@ -3,6 +3,7 @@ import { LoginPage, RegisterPage } from './features/auth';
 import { Dashboard } from './features/dashboard';
 import RoomsPage from "./features/rooms/pages/RoomsPage";
 import TenantsPage from "./features/tenants/pages/TenantsPage";
+import ContractsPage from "./features/contracts/pages/ContractsPage";
 import { PrivateRoute } from './routes/PrivateRoute';
 
 
@@ -15,6 +16,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/rooms" element={<RoomsPage />} />
         <Route path="/tenants" element={<TenantsPage />} />
+        <Route path="/contracts" element={<ContractsPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
 
         {/* Default Redirects */}
