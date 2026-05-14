@@ -27,7 +27,9 @@ instance.interceptors.response.use(
         if (error.response?.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            window.location.href = '/login';
+            
+            // Dispatch custom event để PrivateRoute biết token không hợp lệ
+            window.dispatchEvent(new CustomEvent('unauthorized'));
         }
         return Promise.reject(error);
     }

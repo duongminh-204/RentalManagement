@@ -16,9 +16,9 @@ export const useLogin = () => {
                 throw new Error('Vui lòng nhập email/số điện thoại và mật khẩu');
             }
 
-            console.log('Attempting login with:', { phoneOrEmail });
+            console.log('Attempting login with:', { email: phoneOrEmail });
 
-            const res = await authApi.login({ phoneOrEmail, password });
+            const res = await authApi.login({ email: phoneOrEmail, password });
             console.log('Login response:', res);
 
             if (!res?.token) {
