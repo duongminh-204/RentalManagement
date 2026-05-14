@@ -5,8 +5,8 @@ import RoomsPage from "./features/rooms/pages/RoomsPage";
 import TenantsPage from "./features/tenants/pages/TenantsPage";
 import ContractsPage from "./features/contracts/pages/ContractsPage";
 import VehiclesPage from "./features/vehicles/pages/VehiclesPage";
-import { PrivateRoute } from './routes/PrivateRoute';
 
+import { PrivateRoute } from './routes/PrivateRoute';
 
 function App() {
   return (
@@ -17,15 +17,52 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
 
         {/* Protected Routes */}
-        <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-        <Route path="/rooms" element={<PrivateRoute><RoomsPage /></PrivateRoute>} />
-        <Route path="/tenants" element={<PrivateRoute><TenantsPage /></PrivateRoute>} />
-        <Route path="/contracts" element={<PrivateRoute><ContractsPage /></PrivateRoute>} />
-        <Route path="/vehicles" element={<PrivateRoute><VehiclesPage /></PrivateRoute>} />
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/rooms"
+          element={
+            <PrivateRoute>
+              <RoomsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/tenants"
+          element={
+            <PrivateRoute>
+              <TenantsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/contracts"
+          element={
+            <PrivateRoute>
+              <ContractsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/vehicles"
+          element={
+            <PrivateRoute>
+              <VehiclesPage />
+            </PrivateRoute>
+          }
+        />
 
-        {/* Default Redirects */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        {/* Default Redirect */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
 
+        {/* Catch all */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
   );

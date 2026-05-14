@@ -2,13 +2,13 @@ import axios from 'axios';
 
 const instance = axios.create({
     baseURL: 'http://localhost:5193',
-    timeout: 10000,
+    timeout: 15000,
     headers: {
         'Content-Type': 'application/json',
     }
 });
 
-// Add token to requests
+// Request interceptor - thêm token
 instance.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
@@ -17,12 +17,10 @@ instance.interceptors.request.use(
         }
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
-// Handle responses
+// Response interceptor
 instance.interceptors.response.use(
     (response) => response,
     (error) => {

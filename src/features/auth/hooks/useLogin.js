@@ -17,31 +17,34 @@ export const useLogin = () => {
             }
 
             console.log('Attempting login with:', { phoneOrEmail });
+
             const res = await authApi.login({ phoneOrEmail, password });
             console.log('Login response:', res);
-            
-            if (!res.token) {
+
+            if (!res?.token) {
                 throw new Error('Server không trả về token. Vui lòng thử lại.');
             }
 
-            // Lưu token và thông tin user
+            // Lưu thông tin vào localStorage
             localStorage.setItem('token', res.token);
             localStorage.setItem('user', JSON.stringify(res.user || {}));
-            console.log('Token saved successfully:', res.token);
 
-            // Delay một chút để đảm bảo localStorage được cập nhật
-            setTimeout(() => {
-                console.log('Navigating to dashboard...');
-                navigate('/dashboard');
-            }, 100);
+            console.log(' Login successful - Token saved');
+
+          
+            navigate('/dashboard', { replace: true });
 
         } catch (err) {
             console.error('Login error details:', err);
-            const errorMessage = err.response?.data?.message 
-                || err.message 
-                || 'Đăng nhập thất bại! Vui lòng kiểm tra lại thông tin.';
+
+            const errorMessage = 
+                err.response?.data?.message || 
+                err.message || 
+                'Đăng nhập thất bại! Vui lòng kiểm tra lại thông tin.';
+
             setError(errorMessage);
-            setLoading(false);
+        } finally {
+            setLoading(false);   
         }
     };
 
