@@ -41,6 +41,7 @@ export default function LoginForm() {
                     <label className="block text-left text-sm font-medium text-gray-700 mb-1">Số điện thoại hoặc Email</label>
                     <input
                         type="text"
+                        autoComplete="email"
                         value={formData.phoneOrEmail}
                         onChange={(e) => setFormData({ ...formData, phoneOrEmail: e.target.value })}
                         className="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -54,6 +55,7 @@ export default function LoginForm() {
                     <div className="relative">
                         <input
                             type={showPassword ? "text" : "password"}
+                            autoComplete="current-password"
                             value={formData.password}
                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                             className="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"

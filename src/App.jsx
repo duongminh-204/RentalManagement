@@ -15,11 +15,13 @@ function App() {
         {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/rooms" element={<RoomsPage />} />
-        <Route path="/tenants" element={<TenantsPage />} />
-        <Route path="/contracts" element={<ContractsPage />} />
-        <Route path="/vehicles" element={<VehiclesPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+
+        {/* Protected Routes */}
+        <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+        <Route path="/rooms" element={<PrivateRoute><RoomsPage /></PrivateRoute>} />
+        <Route path="/tenants" element={<PrivateRoute><TenantsPage /></PrivateRoute>} />
+        <Route path="/contracts" element={<PrivateRoute><ContractsPage /></PrivateRoute>} />
+        <Route path="/vehicles" element={<PrivateRoute><VehiclesPage /></PrivateRoute>} />
 
         {/* Default Redirects */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
