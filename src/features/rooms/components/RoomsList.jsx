@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Filter, Download } from 'lucide-react';
+import { Plus, Search, Filter, Download, LayoutGrid, List } from 'lucide-react';
 import RoomTable from '../../../components/tables/RoomTable';
 import RoomForm from './RoomForm';
+import FloorPlanCanvas from './FloorPlanCanvas';
+import RoomDetailModal from './RoomDetailModal';
+import FloorSelector from './FloorSelector';
+import RoomStatistics from './RoomStatistics';
 import { useRooms } from '../hooks/useRooms';
 
 const RoomsList = () => {
@@ -14,13 +18,25 @@ const RoomsList = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState(null);
+  const [viewMode, setViewMode] = useState('floorplan'); // 'floorplan' or 'table'
+  const [selectedFloor, setSelectedFloor] = useState(1);
+  const [selectedRoomDetail, setSelectedRoomDetail] = useState(null);
+  const [showRoomDetail, setShowRoomDetail] = useState(false);
 
-  // Filter rooms
-  const filteredRooms = rooms.filter(room => {
-    const matchSearch = room.roomNumber?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchStatus = statusFilter === 'all' || room.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  // Get available floors
+  const availableFloors = useMemo(() => {
+    const floors = [...new Set(rooms.map(room => room.floor || 1))];
+    return floors.sort((a, b) => a - b);
+  }, [rooms]);
+
+  // Filter rooms for table view
+  const filteredRooms = useMemo(() => {
+    return rooms.filter(room => {
+      const matchSearch = room.roomNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchStatus = statusFilter === 'all' || room.status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [rooms, searchTerm, statusFilter]);
 
   const handleAddRoom = async (formData) => {
     try {
@@ -65,6 +81,17 @@ const RoomsList = () => {
     }
   };
 
+  const handleRoomClick = (room) => {
+    console.log('Room clicked:', room);
+    setSelectedRoomDetail(room);
+    setShowRoomDetail(true);
+  };
+
+  const handleRoomHover = (room) => {
+    // Can be used to show preview or tooltip
+    console.log('Hovering over room:', room.roomNumber);
+  };
+
   const handleExport = () => {
     console.log('Exporting rooms data...');
     // TODO: Implement CSV/Excel export
@@ -101,7 +128,7 @@ const RoomsList = () => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-10 gap-4"
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4"
         >
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Quản lý phòng trọ</h1>
@@ -129,76 +156,162 @@ const RoomsList = () => {
           </div>
         </motion.div>
 
-        {/* Stats */}
+        {/* View Mode Selector */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex gap-2 mb-6"
         >
-          {statCards.map((stat, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 + idx * 0.05 }}
-              className={`bg-white p-6 rounded-lg shadow border-l-4 ${getBorderClass(stat.color)}`}
-            >
-              <p className="text-gray-600 text-sm font-medium">{stat.label}</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{stat.value}</p>
-            </motion.div>
-          ))}
+          <button
+            onClick={() => setViewMode('floorplan')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
+              viewMode === 'floorplan'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            <LayoutGrid size={20} />
+            Sơ đồ tầng
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
+              viewMode === 'table'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            <List size={20} />
+            Bảng
+          </button>
         </motion.div>
 
-        {/* Filters */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row gap-4 mb-8"
-        >
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-3 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Tìm kiếm theo số phòng..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+        {/* Floor Plan View */}
+        {viewMode === 'floorplan' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-4"
+          >
+            {/* Statistics */}
+            <RoomStatistics rooms={rooms} selectedFloor={selectedFloor} />
 
-          <div className="flex items-center gap-2">
-            <Filter size={20} className="text-gray-400" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="occupied">Đang thuê</option>
-              <option value="vacant">Trống</option>
-              <option value="maintenance">Đang bảo trì</option>
-            </select>
-          </div>
-        </motion.div>
+            {/* Floor Selector */}
+            {availableFloors.length > 0 && (
+              <FloorSelector
+                selectedFloor={selectedFloor}
+                availableFloors={availableFloors}
+                onFloorChange={setSelectedFloor}
+              />
+            )}
 
-        {/* Global Error */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
-            {error}
-          </div>
+            {/* Floor Plan Canvas */}
+            <div className="bg-white rounded-lg shadow p-2 h-96">
+              <FloorPlanCanvas
+                rooms={rooms}
+                selectedFloor={selectedFloor}
+                onRoomClick={handleRoomClick}
+                onRoomHover={handleRoomHover}
+              />
+            </div>
+
+            {/* Legend */}
+            <div className="bg-white rounded-lg shadow p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">Huyền thoại</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-500 rounded"></div>
+                  <span className="text-sm text-gray-700">Phòng trống</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-red-500 rounded"></div>
+                  <span className="text-sm text-gray-700">Đang thuê</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-orange-500 rounded"></div>
+                  <span className="text-sm text-gray-700">Đang bảo trì</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         )}
 
-        {/* Table */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <RoomTable
-            rooms={filteredRooms}
-            loading={loading}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onStatusChange={changeRoomStatus}
-          />
-        </motion.div>
+        {/* Table View */}
+        {viewMode === 'table' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-4"
+          >
+            {/* Filters */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col sm:flex-row gap-4"
+            >
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm theo số phòng..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Filter size={20} className="text-gray-400" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="occupied">Đang thuê</option>
+                  <option value="vacant">Trống</option>
+                  <option value="maintenance">Đang bảo trì</option>
+                </select>
+              </div>
+            </motion.div>
+
+            {/* Global Error */}
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+                {error}
+              </div>
+            )}
+
+            {/* Table */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <RoomTable
+                rooms={filteredRooms}
+                loading={loading}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onStatusChange={changeRoomStatus}
+              />
+            </motion.div>
+          </motion.div>
+        )}
       </div>
+
+      {/* Room Detail Modal */}
+      <AnimatePresence>
+        {showRoomDetail && (
+          <RoomDetailModal
+            room={selectedRoomDetail}
+            isOpen={showRoomDetail}
+            onClose={() => setShowRoomDetail(false)}
+            onEdit={(room) => {
+              handleEdit(room);
+              setShowRoomDetail(false);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Form Modal */}
       <AnimatePresence>
