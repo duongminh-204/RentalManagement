@@ -40,12 +40,12 @@ export const VEHICLE_STATUS = {
   removed: 'Đã xóa',
 };
 
-// Get vehicle type label
+
 export const getVehicleTypeLabel = (type) => {
   return VEHICLE_TYPES[type] || type;
 };
 
-// Get vehicle status label
+
 export const getVehicleStatusLabel = (status) => {
   return VEHICLE_STATUS[status] || status;
 };
@@ -62,18 +62,15 @@ export const getVehicleStatusColor = (status) => {
   return colorMap[status] || 'bg-gray-100 text-gray-800';
 };
 
-// Format license plate (VN format)
+
 export const formatLicensePlate = (plate) => {
   if (!plate) return '';
-  // Format: 30A-12345 or 30-A12345
   return plate.toUpperCase();
 };
 
-// Validate license plate format (Vietnamese)
+
 export const validateLicensePlate = (plate) => {
   if (!plate) return false;
-  // Vietnamese license plate format (simplified)
-  // XX-XXX.XX or XX A-XXX.XX
   const vietnamPlateRegex = /^[0-9]{2,3}[A-Z]{0,1}[-]?[0-9]{1,5}(\.[0-9]{2})?$/i;
   return vietnamPlateRegex.test(plate.replace(/\s/g, ''));
 };
