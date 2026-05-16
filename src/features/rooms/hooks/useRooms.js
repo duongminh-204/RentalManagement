@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import * as roomsApi from '../api/roomsApi';
-import { mockRoomsData } from '../mockData';
+import {
+  normalizeRoomFromApi,
+  normalizeRoomsList,
+  mapRoomStatusToApi,
+} from '../utils/roomHelpers';
 
 export const useRooms = () => {
   const [rooms, setRooms] = useState([]);
@@ -8,48 +12,45 @@ export const useRooms = () => {
   const [error, setError] = useState(null);
 
   const fetchRooms = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await roomsApi.getAllRooms();
-      let roomsData = data.data || data || [];
-      
-      // If no rooms from API, use mock data for testing/demo
-      if (!roomsData || roomsData.length === 0) {
-        console.log('No rooms from API, using mock data');
-        roomsData = mockRoomsData;
-      }
-      
-      // Ensure all rooms have floor property - if missing, extract from roomNumber or default to 1
-      const roomsWithFloor = roomsData.map(room => ({
-        ...room,
-        floor: room.floor || (room.roomNumber ? parseInt(room.roomNumber.charAt(0)) : 1) || 1
-      }));
-      setRooms(roomsWithFloor);
-    } catch (err) {
-      console.error('Error fetching rooms:', err);
-      // Use mock data as fallback when API fails
-      console.log('API error, using mock data');
-      setRooms(mockRoomsData);
-      setError(err.message || 'Lỗi khi tải danh sách phòng');
-    } finally {
-      setLoading(false);
-    }
-  };
+  console.log("=== FETCH ROOMS ĐANG CHẠY ===");
+  console.log("Current time:", new Date().toLocaleTimeString());
+
+  try {
+    setLoading(true);
+    setError(null);
+
+    console.log(" Gọi API: http://localhost:5193/api/room");
+
+    const payload = await roomsApi.getAllRooms();
+    
+    console.log("API trả về thành công:", payload);
+    console.log("Số phòng nhận được:", payload?.data?.length || 0);
+
+    const roomsData = normalizeRoomsList(payload);
+    console.log("Sau normalize:", roomsData);
+
+    setRooms(roomsData);
+  } catch (err) {
+    console.error("LỖI KHI GỌI API:", err);
+    console.error("Error response:", err.response?.data);
+    console.error("Error status:", err.response?.status);
+    
+    setError(err.response?.data?.message || err.message || 'Lỗi khi tải phòng');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const addRoom = async (roomData) => {
     try {
       setError(null);
-      const newRoom = await roomsApi.createRoom(roomData);
-      const roomWithFloor = {
-        ...(newRoom.data || newRoom),
-        floor: (newRoom.data || newRoom).floor || (roomData.roomNumber ? parseInt(roomData.roomNumber.charAt(0)) : 1) || 1
-      };
-      setRooms([...rooms, roomWithFloor]);
-      return newRoom;
+      const created = await roomsApi.createRoom(roomData);
+      const roomWithFloor = normalizeRoomFromApi(created?.data ?? created);
+      setRooms((prev) => [...prev, roomWithFloor]);
+      return roomWithFloor;
     } catch (err) {
       console.error('Error creating room:', err);
-      setError(err.message || 'Lỗi khi tạo phòng mới');
+      setError(err.response?.data?.message || err.message || 'Lỗi khi tạo phòng mới');
       throw err;
     }
   };
@@ -57,18 +58,15 @@ export const useRooms = () => {
   const editRoom = async (roomId, roomData) => {
     try {
       setError(null);
-      const updatedRoom = await roomsApi.updateRoom(roomId, roomData);
-      const roomWithFloor = {
-        ...(updatedRoom.data || updatedRoom),
-        floor: (updatedRoom.data || updatedRoom).floor || roomData.floor || 1
-      };
-      setRooms(rooms.map(room => 
-        room.id === roomId ? roomWithFloor : room
-      ));
-      return updatedRoom;
+      const updated = await roomsApi.updateRoom(roomId, roomData);
+      const roomWithFloor = normalizeRoomFromApi(updated?.data ?? updated);
+      setRooms((prev) =>
+        prev.map((room) => (String(room.id) === String(roomId) ? roomWithFloor : room))
+      );
+      return roomWithFloor;
     } catch (err) {
       console.error('Error updating room:', err);
-      setError(err.message || 'Lỗi khi cập nhật phòng');
+      setError(err.response?.data?.message || err.message || 'Lỗi khi cập nhật phòng');
       throw err;
     }
   };
@@ -76,14 +74,15 @@ export const useRooms = () => {
   const changeRoomStatus = async (roomId, status) => {
     try {
       setError(null);
-      const updatedRoom = await roomsApi.updateRoomStatus(roomId, status);
-      setRooms(rooms.map(room => 
-        room.id === roomId ? (updatedRoom.data || updatedRoom) : room
-      ));
-      return updatedRoom;
+      const updated = await roomsApi.updateRoomStatus(roomId, mapRoomStatusToApi(status));
+      const normalized = normalizeRoomFromApi(updated?.data ?? updated);
+      setRooms((prev) =>
+        prev.map((room) => (String(room.id) === String(roomId) ? normalized : room))
+      );
+      return normalized;
     } catch (err) {
       console.error('Error updating room status:', err);
-      setError(err.message || 'Lỗi khi cập nhật trạng thái phòng');
+      setError(err.response?.data?.message || err.message || 'Lỗi khi cập nhật trạng thái phòng');
       throw err;
     }
   };
@@ -92,10 +91,10 @@ export const useRooms = () => {
     try {
       setError(null);
       await roomsApi.deleteRoom(roomId);
-      setRooms(rooms.filter(room => room.id !== roomId));
+      setRooms((prev) => prev.filter((room) => String(room.id) !== String(roomId)));
     } catch (err) {
       console.error('Error deleting room:', err);
-      setError(err.message || 'Lỗi khi xóa phòng');
+      setError(err.response?.data?.message || err.message || 'Lỗi khi xóa phòng');
       throw err;
     }
   };
@@ -112,6 +111,6 @@ export const useRooms = () => {
     addRoom,
     editRoom,
     changeRoomStatus,
-    removeRoom
+    removeRoom,
   };
 };

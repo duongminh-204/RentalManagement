@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Edit, Trash2, MoreVertical } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import RoomStatusBadge from '../common/RoomStatusBadge';
 
 const RoomTable = ({ 
@@ -27,14 +27,6 @@ const RoomTable = ({
     );
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.05 }
-    }
-  };
-
   const rowVariants = {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0, transition: { duration: 0.3 } }
@@ -42,12 +34,7 @@ const RoomTable = ({
 
   return (
     <div className="overflow-x-auto bg-white rounded-lg shadow">
-      <motion.table 
-        className="w-full"
-        variants={containerVariants}
-        initial="hidden"
-        animate="show"
-      >
+      <table className="w-full">
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
             <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Số phòng</th>
@@ -60,10 +47,12 @@ const RoomTable = ({
           </tr>
         </thead>
         <tbody>
-          {rooms.map((room) => (
-            <motion.tr 
-              key={room.id}
+          {rooms.map((room, index) => (
+            <motion.tr
+              key={room.id != null ? String(room.id) : `room-row-${room.roomNumber ?? index}`}
               variants={rowVariants}
+              initial="hidden"
+              animate="show"
               className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
             >
               <td className="px-6 py-4 font-semibold text-gray-900">{room.roomNumber}</td>
@@ -99,7 +88,7 @@ const RoomTable = ({
             </motion.tr>
           ))}
         </tbody>
-      </motion.table>
+      </table>
     </div>
   );
 };

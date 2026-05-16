@@ -1,81 +1,43 @@
 import api from '../../../utils/api';
+import { denormalizeRoomForApi } from '../utils/roomHelpers';
 
-// Lấy danh sách tất cả phòng
+// Lấy danh sách tất cả phòng — backend: GET /api/room
 export const getAllRooms = async () => {
-  try {
-    const response = await api.get('/room');
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.get('/room');
+  return response.data;
 };
 
-// Lấy thông tin chi tiết một phòng
 export const getRoomById = async (roomId) => {
-  try {
-    const response = await api.get(`/room/${roomId}`);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.get(`/room/${roomId}`);
+  return response.data;
 };
 
-// Tạo phòng mới
 export const createRoom = async (roomData) => {
-  try {
-    const response = await api.post('/room', roomData);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.post('/room', denormalizeRoomForApi(roomData));
+  return response.data;
 };
 
-// Cập nhật thông tin phòng
 export const updateRoom = async (roomId, roomData) => {
-  try {
-    const response = await api.put(`/room/${roomId}`, roomData);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.put(`/room/${roomId}`, denormalizeRoomForApi(roomData));
+  return response.data;
 };
 
-// Cập nhật trạng thái phòng
 export const updateRoomStatus = async (roomId, status) => {
-  try {
-    const response = await api.patch(`/room/${roomId}/status`, { status });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.patch(`/room/${roomId}/status`, { status });
+  return response.data;
 };
 
-// Xóa phòng
 export const deleteRoom = async (roomId) => {
-  try {
-    const response = await api.delete(`/room/${roomId}`);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.delete(`/room/${roomId}`);
+  return response.data;
 };
 
-// Lọc phòng theo trạng thái
 export const getRoomsByStatus = async (status) => {
-  try {
-    const response = await api.get(`/room/status/${status}`);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.get(`/room/status/${status}`);
+  return response.data;
 };
 
-// Lấy thống kê phòng
 export const getRoomsStats = async () => {
-  try {
-    const response = await api.get('/room/stats');
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await api.get('/room/stats');
+  return response.data;
 };
