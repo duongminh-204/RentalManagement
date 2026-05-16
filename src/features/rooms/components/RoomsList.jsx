@@ -182,25 +182,6 @@ const RoomsList = () => {
                 onRoomHover={handleRoomHover}
               />
             </div>
-
-            {/* Legend */}
-            <div className="bg-white rounded-lg shadow p-4">
-              <h3 className="font-semibold text-gray-900 mb-3">Huyền thoại</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-500 rounded"></div>
-                  <span className="text-sm text-gray-700">Phòng trống</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-red-500 rounded"></div>
-                  <span className="text-sm text-gray-700">Đang thuê</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-orange-500 rounded"></div>
-                  <span className="text-sm text-gray-700">Đang bảo trì</span>
-                </div>
-              </div>
-            </div>
           </motion.div>
         )}
 

@@ -213,6 +213,25 @@ const FloorPlanCanvas = ({
         <div>💡 Cuộn để phóng to/thu nhỏ</div>
         <div className="text-xs text-gray-500 mt-1">Chuột phải + kéo để di chuyển</div>
       </div>
+
+      {/* Legend */}
+      <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 z-10">
+        <h3 className="font-semibold text-gray-900 mb-3 text-sm">Huyền thoại</h3>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 bg-blue-500 rounded"></div>
+            <span className="text-xs text-gray-700">Phòng trống</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 bg-red-500 rounded"></div>
+            <span className="text-xs text-gray-700">Đang thuê</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 bg-orange-500 rounded"></div>
+            <span className="text-xs text-gray-700">Đang bảo trì</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
