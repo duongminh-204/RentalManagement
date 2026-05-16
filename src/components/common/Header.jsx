@@ -35,7 +35,6 @@ const Header = () => {
             </div>
             <div className="hidden sm:block">
               <h1 className="text-white font-semibold text-sm tracking-tight font-['Segoe_UI',sans-serif]">RentalManagement</h1>
-              <p className="text-blue-100 text-xs">Quản lý phòng trọ</p>
             </div>
           </Link>
 

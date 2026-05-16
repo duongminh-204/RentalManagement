@@ -119,11 +119,8 @@ const RoomsList = () => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4"
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-end mb-6 gap-4"
         >
-          <div>
-            <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent drop-shadow-sm">Quản lý phòng trọ</h1>
-          </div>
           <div className="flex gap-3 w-full sm:w-auto">
             <button
               onClick={() => {
