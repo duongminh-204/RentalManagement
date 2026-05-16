@@ -1,12 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Filter, Download, LayoutGrid, List } from 'lucide-react';
+import { Plus, Search, Filter, LayoutGrid, List } from 'lucide-react';
 import RoomTable from '../../../components/tables/RoomTable';
 import RoomForm from './RoomForm';
 import FloorPlanCanvas from './FloorPlanCanvas';
 import RoomDetailModal from './RoomDetailModal';
-import FloorSelector from './FloorSelector';
-import RoomStatistics from './RoomStatistics';
 import { useRooms } from '../hooks/useRooms';
 
 const RoomsList = () => {
@@ -19,15 +17,8 @@ const RoomsList = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState(null);
   const [viewMode, setViewMode] = useState('floorplan'); // 'floorplan' or 'table'
-  const [selectedFloor, setSelectedFloor] = useState(1);
   const [selectedRoomDetail, setSelectedRoomDetail] = useState(null);
   const [showRoomDetail, setShowRoomDetail] = useState(false);
-
-  // Get available floors
-  const availableFloors = useMemo(() => {
-    const floors = [...new Set(rooms.map(room => room.floor || 1))];
-    return floors.sort((a, b) => a - b);
-  }, [rooms]);
 
   // Filter rooms for table view
   const filteredRooms = useMemo(() => {
@@ -131,17 +122,9 @@ const RoomsList = () => {
           className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4"
         >
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Quản lý phòng trọ</h1>
-            <p className="text-gray-600 text-sm mt-2">Quản lý thông tin phòng, giá cả và trạng thái</p>
+            <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent drop-shadow-sm">Quản lý phòng trọ</h1>
           </div>
           <div className="flex gap-3 w-full sm:w-auto">
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors font-medium"
-            >
-              <Download size={20} />
-              Xuất
-            </button>
             <button
               onClick={() => {
                 setEditingRoom(null);
@@ -194,23 +177,10 @@ const RoomsList = () => {
             exit={{ opacity: 0 }}
             className="space-y-4"
           >
-            {/* Statistics */}
-            <RoomStatistics rooms={rooms} selectedFloor={selectedFloor} />
-
-            {/* Floor Selector */}
-            {availableFloors.length > 0 && (
-              <FloorSelector
-                selectedFloor={selectedFloor}
-                availableFloors={availableFloors}
-                onFloorChange={setSelectedFloor}
-              />
-            )}
-
             {/* Floor Plan Canvas */}
             <div className="bg-white rounded-lg shadow p-2 h-96">
               <FloorPlanCanvas
                 rooms={rooms}
-                selectedFloor={selectedFloor}
                 onRoomClick={handleRoomClick}
                 onRoomHover={handleRoomHover}
               />

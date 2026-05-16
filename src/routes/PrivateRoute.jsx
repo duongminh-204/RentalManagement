@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import Header from '../components/common/Header';
+import Footer from '../components/common/Footer';
 
 export const PrivateRoute = ({ children }) => {
     const [isChecking, setIsChecking] = useState(true);
@@ -45,7 +47,15 @@ export const PrivateRoute = ({ children }) => {
         return <Navigate to="/login" replace />;
     }
 
-    return children;
+    return (
+        <div className="flex flex-col min-h-screen bg-gray-50">
+            <Header />
+            <main className="flex-1">
+                {children}
+            </main>
+            <Footer />
+        </div>
+    );
 };
 
 export default PrivateRoute;

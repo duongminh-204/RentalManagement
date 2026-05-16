@@ -10,7 +10,6 @@ const ROOMS_PER_ROW = 6;
 
 const FloorPlanCanvas = ({ 
   rooms = [], 
-  selectedFloor,
   onRoomClick,
   onRoomHover 
 }) => {
@@ -27,13 +26,11 @@ const FloorPlanCanvas = ({
   console.log('FloorPlanCanvas Debug:', {
     roomsReceived: rooms?.length || 0,
     dataToUse: dataToUse?.length || 0,
-    selectedFloor,
-    firstRoomFloor: dataToUse?.[0]?.floor,
     usingMockData: dataToUse === mockRoomsData
   });
 
-  // Filter rooms by floor
-  const floorRooms = dataToUse.filter(room => room.floor === selectedFloor);
+  // Use all rooms instead of filtering by floor
+  const floorRooms = dataToUse;
 
   // Organize rooms into rows
   const roomRows = [];
@@ -146,15 +143,6 @@ const FloorPlanCanvas = ({
             stroke="#E0E0E0"
           />
 
-          {/* Floor label */}
-          <Text
-            x={20}
-            y={20}
-            text={`Tầng ${selectedFloor}`}
-            fontSize={24}
-            fontStyle="bold"
-            fill="#333"
-          />
 
           {/* Rooms */}
           {roomRows.map((row, rowIndex) =>
