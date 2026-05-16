@@ -4,6 +4,7 @@ import { Plus, Search, Filter, LayoutGrid, List } from 'lucide-react';
 import RoomTable from '../../../components/tables/RoomTable';
 import RoomForm from './RoomForm';
 import FloorPlanCanvas from './FloorPlanCanvas';
+import RoomStatusGuide from './RoomStatusGuide';
 import RoomDetailModal from './RoomDetailModal';
 import { useRooms } from '../hooks/useRooms';
 
@@ -174,8 +175,8 @@ const RoomsList = () => {
             exit={{ opacity: 0 }}
             className="space-y-4"
           >
-            {/* Floor Plan Canvas */}
-            <div className="bg-white rounded-lg shadow p-2 h-96">
+            <RoomStatusGuide />
+            <div className="h-96 overflow-hidden rounded-xl border border-hairline-cloud bg-surface-light p-2">
               <FloorPlanCanvas
                 rooms={rooms}
                 onRoomClick={handleRoomClick}

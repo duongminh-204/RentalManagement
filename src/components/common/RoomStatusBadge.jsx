@@ -3,19 +3,19 @@ import { Check, AlertCircle, Wrench } from 'lucide-react';
 
 const RoomStatusBadge = ({ status }) => {
   const statusConfig = {
-    occupied: {
-      label: 'Đang thuê',
-      className: 'bg-accent-violet-mid text-on-primary',
-      icon: Check
-    },
     vacant: {
       label: 'Trống',
-      className: 'bg-surface-night text-on-primary',
+      className: 'bg-accent-lime text-primary border border-[#8fb82e]',
       icon: AlertCircle
+    },
+    occupied: {
+      label: 'Đang thuê',
+      className: 'bg-primary text-on-primary border border-hairline-violet',
+      icon: Check
     },
     maintenance: {
       label: 'Đang bảo trì',
-      className: 'bg-accent-pink/20 text-ink-deep',
+      className: 'bg-accent-pink text-primary border border-[#d4567f]',
       icon: Wrench
     }
   };
