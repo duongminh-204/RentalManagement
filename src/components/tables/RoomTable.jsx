@@ -78,7 +78,7 @@ const RoomTable = ({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => onEdit(room)}
-                    className="inline-flex items-center gap-1 px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors text-sm font-medium"
+                    className="inline-flex items-center gap-1 px-3 py-2 bg-blue-50 text-accent-violet hover:bg-blue-100 rounded-lg transition-colors text-sm font-medium"
                   >
                     <Edit size={16} />
                     Sửa

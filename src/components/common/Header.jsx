@@ -25,32 +25,31 @@ const Header = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="bg-gradient-to-r from-blue-600 to-blue-800 shadow-lg sticky top-0 z-50">
-      <div className="w-full px-4">
-        <div className="flex justify-between items-center h-20 px-4">
-          {/* Logo with left spacing */}
-          <Link to="/dashboard" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Building2 className="text-blue-600" size={24} />
+    <header className="sticky top-0 z-50 border-b border-hairline-cloud bg-surface-light">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          <Link to="/dashboard" className="group flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary transition-transform group-hover:scale-105">
+              <Building2 className="text-on-primary" size={22} />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-white font-semibold text-sm tracking-tight font-['Segoe_UI',sans-serif]">RentalManagement</h1>
+              <p className="font-display text-sm font-semibold tracking-tight text-ink-deep">
+                RentalManagement
+              </p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.25px] text-accent-violet-mid">
+                Quản lý phòng trọ
+              </p>
             </div>
           </Link>
 
-          {/* Desktop Menu - Center */}
-          <nav className="hidden lg:flex gap-1">
+          <nav className="hidden items-center gap-1 lg:flex">
             {menuItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-all ${
-                    isActive(item.path)
-                      ? 'bg-white text-blue-600 shadow-lg'
-                      : 'text-white hover:bg-blue-500 hover:bg-opacity-50'
-                  }`}
+                  className={`nav-link ${isActive(item.path) ? 'nav-link-active' : ''}`}
                 >
                   <Icon size={18} />
                   {item.label}
@@ -59,31 +58,31 @@ const Header = () => {
             })}
           </nav>
 
-          {/* Right Section - Profile */}
-          <div className="flex items-center gap-4">
-            {/* Profile Dropdown */}
+          <div className="flex items-center gap-2">
             <div className="relative hidden sm:block">
               <button
+                type="button"
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-white hover:bg-blue-500 hover:bg-opacity-50 transition-all"
+                className="nav-link border-0 bg-transparent"
               >
-                <div className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-press text-ink-deep">
                   <User size={18} />
                 </div>
-                <span className="text-sm font-medium">Profile</span>
+                <span className="text-sm font-medium">Tài khoản</span>
               </button>
 
               <AnimatePresence>
                 {isProfileOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl"
+                    exit={{ opacity: 0, y: -8 }}
+                    className="absolute right-0 mt-2 w-48 overflow-hidden rounded-xl border border-hairline-cloud bg-surface-light shadow-[var(--shadow-card)]"
                   >
                     <button
+                      type="button"
                       onClick={handleLogout}
-                      className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium rounded-lg transition-colors"
+                      className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-accent-pink transition-colors hover:bg-surface-press"
                     >
                       <LogOut size={18} />
                       Đăng xuất
@@ -93,24 +92,24 @@ const Header = () => {
               </AnimatePresence>
             </div>
 
-            {/* Mobile Menu Button */}
             <button
+              type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="lg:hidden text-white p-2 hover:bg-blue-500 hover:bg-opacity-50 rounded-lg transition-all"
+              className="rounded-lg p-2 text-ink-deep hover:bg-surface-press lg:hidden"
+              aria-label="Menu"
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
         <AnimatePresence>
           {isOpen && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden pb-4 space-y-2"
+              className="space-y-1 border-t border-hairline-cloud pb-4 pt-2 lg:hidden"
             >
               {menuItems.map((item) => {
                 const Icon = item.icon;
@@ -119,11 +118,7 @@ const Header = () => {
                     key={item.path}
                     to={item.path}
                     onClick={() => setIsOpen(false)}
-                    className={`block px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-all ${
-                      isActive(item.path)
-                        ? 'bg-white text-blue-600'
-                        : 'text-white hover:bg-blue-500 hover:bg-opacity-50'
-                    }`}
+                    className={`nav-link w-full ${isActive(item.path) ? 'nav-link-active' : ''}`}
                   >
                     <Icon size={18} />
                     {item.label}
@@ -131,8 +126,9 @@ const Header = () => {
                 );
               })}
               <button
+                type="button"
                 onClick={handleLogout}
-                className="w-full px-4 py-2 text-left text-white hover:bg-red-500 flex items-center gap-2 font-medium rounded-lg transition-colors"
+                className="nav-link w-full text-accent-pink"
               >
                 <LogOut size={18} />
                 Đăng xuất

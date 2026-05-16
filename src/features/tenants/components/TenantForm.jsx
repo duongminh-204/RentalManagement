@@ -33,7 +33,7 @@ const TenantForm = ({ tenant = null, onSubmit, onCancel, loading = false, error 
                 name="fullName"
                 value={formData.fullName}
                 onChange={handleChange}
-                className={`w-full px-5 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${validationErrors.fullName ? 'border-red-500' : 'border-gray-200'}`}
+                className={`w-full px-5 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus-visible:outline-accent-violet focus:border-transparent transition-all ${validationErrors.fullName ? 'border-red-500' : 'border-gray-200'}`}
                 placeholder="Nguyễn Văn A"
               />
               {validationErrors.fullName && <p className="text-red-500 text-sm mt-1.5">{validationErrors.fullName}</p>}
@@ -70,7 +70,7 @@ const TenantForm = ({ tenant = null, onSubmit, onCancel, loading = false, error 
               value={formData.notes}
               onChange={handleChange}
               rows={4}
-              className="w-full px-5 py-4 border border-gray-200 rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+              className="w-full px-5 py-4 border border-gray-200 rounded-3xl focus:outline-none focus:ring-2 focus-visible:outline-accent-violet resize-y"
               placeholder="Ghi chú thêm về khách thuê..."
             />
           </div>
@@ -88,7 +88,7 @@ const TenantForm = ({ tenant = null, onSubmit, onCancel, loading = false, error 
             <button
               type="submit"
               disabled={loading}
-              className="px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition-all disabled:opacity-70 flex items-center gap-2"
+              className="px-8 py-3.5 bg-primary hover:opacity-90 text-white font-semibold rounded-2xl transition-all disabled:opacity-70 flex items-center gap-2"
             >
               {loading ? 'Đang xử lý...' : tenant ? 'Cập nhật' : 'Thêm khách thuê'}
             </button>

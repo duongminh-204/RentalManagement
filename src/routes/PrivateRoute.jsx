@@ -10,24 +10,19 @@ export const PrivateRoute = ({ children }) => {
     useEffect(() => {
         const checkAuth = () => {
             const token = localStorage.getItem('token');
-            
-            console.log('PrivateRoute: Checking token...', token ? '✅ Token found' : '❌ No token');
-
             setIsAuthenticated(!!token);
             setIsChecking(false);
         };
 
         checkAuth();
 
-        // Listen for unauthorized events
         const handleUnauthorized = () => {
-            console.log('PrivateRoute: Unauthorized detected, logging out');
             setIsAuthenticated(false);
         };
 
         window.addEventListener('storage', checkAuth);
         window.addEventListener('unauthorized', handleUnauthorized);
-        
+
         return () => {
             window.removeEventListener('storage', checkAuth);
             window.removeEventListener('unauthorized', handleUnauthorized);
@@ -36,23 +31,20 @@ export const PrivateRoute = ({ children }) => {
 
     if (isChecking) {
         return (
-            <div className="flex items-center justify-center h-screen bg-gray-50">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <div className="flex h-screen items-center justify-center bg-surface-light">
+                <div className="h-12 w-12 animate-spin rounded-full border-2 border-hairline-cloud border-t-primary" />
             </div>
         );
     }
 
     if (!isAuthenticated) {
-        console.log('PrivateRoute: Redirecting to /login');
         return <Navigate to="/login" replace />;
     }
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
+        <div className="flex min-h-screen flex-col bg-surface-light">
             <Header />
-            <main className="flex-1">
-                {children}
-            </main>
+            <main className="flex-1">{children}</main>
             <Footer />
         </div>
     );

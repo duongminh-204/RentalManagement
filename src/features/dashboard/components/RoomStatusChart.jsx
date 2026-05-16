@@ -12,57 +12,55 @@ const RoomStatusChart = ({ totalRooms, occupiedRooms, emptyRooms }) => {
   const emptyPercentage = totalRooms > 0 ? (emptyRooms / totalRooms) * 100 : 0;
 
   return (
-    <motion.div variants={itemVariants} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)]">
-      <div className="flex items-center gap-2 mb-6">
-        <div className="p-2 bg-blue-50 rounded-lg"><PieChart className="w-5 h-5 text-blue-600" /></div>
-        <h3 className="text-lg font-bold text-slate-900">Tỷ lệ lấp đầy</h3>
+    <motion.div variants={itemVariants} className="card-compact">
+      <div className="mb-6 flex items-center gap-2">
+        <div className="rounded-lg bg-surface-press p-2">
+          <PieChart className="h-5 w-5 text-accent-violet" />
+        </div>
+        <h3 className="font-display text-lg font-semibold text-ink-deep">Tỷ lệ lấp đầy</h3>
       </div>
-      
+
       <div className="space-y-6">
-        {/* Occupied Rooms */}
         <div>
-          <div className="flex items-end justify-between mb-2">
+          <div className="mb-2 flex items-end justify-between">
             <div>
-              <span className="text-sm font-bold text-slate-700">Phòng đang thuê</span>
-              <span className="text-xs font-medium text-slate-500 ml-2">({occupiedRooms}/{totalRooms})</span>
+              <span className="text-sm font-semibold text-ink-deep">Phòng đang thuê</span>
+              <span className="ml-2 text-xs font-medium text-muted">({occupiedRooms}/{totalRooms})</span>
             </div>
-            <span className="text-sm font-bold text-emerald-600">{occupiedPercentage.toFixed(1)}%</span>
+            <span className="text-sm font-bold text-accent-lime">{occupiedPercentage.toFixed(1)}%</span>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-press">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${occupiedPercentage}%` }}
               transition={{ duration: 1, delay: 0.2 }}
-              className="bg-emerald-500 h-full rounded-full"
+              className="h-full rounded-full bg-accent-lime"
             />
           </div>
         </div>
 
-        {/* Empty Rooms */}
         <div>
-          <div className="flex items-end justify-between mb-2">
+          <div className="mb-2 flex items-end justify-between">
             <div>
-              <span className="text-sm font-bold text-slate-700">Phòng trống</span>
-              <span className="text-xs font-medium text-slate-500 ml-2">({emptyRooms}/{totalRooms})</span>
+              <span className="text-sm font-semibold text-ink-deep">Phòng trống</span>
+              <span className="ml-2 text-xs font-medium text-muted">({emptyRooms}/{totalRooms})</span>
             </div>
-            <span className="text-sm font-bold text-amber-500">{emptyPercentage.toFixed(1)}%</span>
+            <span className="text-sm font-bold text-accent-violet-mid">{emptyPercentage.toFixed(1)}%</span>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-press">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${emptyPercentage}%` }}
               transition={{ duration: 1, delay: 0.3 }}
-              className="bg-amber-400 h-full rounded-full"
+              className="h-full rounded-full bg-accent-violet-mid"
             />
           </div>
         </div>
       </div>
-      
-      <div className="mt-6 pt-4 border-t border-slate-100">
-        <p className="text-sm text-slate-500 text-center">
-          <span className="font-semibold text-slate-700">Mẹo:</span> Tỷ lệ lấp đầy lý tưởng là trên 90%.
-        </p>
-      </div>
+
+      <p className="mt-6 border-t border-hairline-cloud pt-4 text-center text-sm text-muted">
+        <span className="font-semibold text-ink-deep">Mẹo:</span> Tỷ lệ lấp đầy lý tưởng là trên 90%.
+      </p>
     </motion.div>
   );
 };

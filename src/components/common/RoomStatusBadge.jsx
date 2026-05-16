@@ -5,20 +5,17 @@ const RoomStatusBadge = ({ status }) => {
   const statusConfig = {
     occupied: {
       label: 'Đang thuê',
-      bgColor: 'bg-green-100',
-      textColor: 'text-green-800',
+      className: 'bg-accent-violet-mid text-on-primary',
       icon: Check
     },
     vacant: {
       label: 'Trống',
-      bgColor: 'bg-blue-100',
-      textColor: 'text-blue-800',
+      className: 'bg-surface-night text-on-primary',
       icon: AlertCircle
     },
     maintenance: {
       label: 'Đang bảo trì',
-      bgColor: 'bg-yellow-100',
-      textColor: 'text-yellow-800',
+      className: 'bg-accent-pink/20 text-ink-deep',
       icon: Wrench
     }
   };
@@ -27,8 +24,8 @@ const RoomStatusBadge = ({ status }) => {
   const Icon = config.icon;
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${config.bgColor} ${config.textColor}`}>
-      <Icon size={16} />
+    <span className={`inline-flex items-center gap-1.5 rounded-xs px-2 py-1 text-xs font-semibold ${config.className}`}>
+      <Icon size={14} />
       {config.label}
     </span>
   );

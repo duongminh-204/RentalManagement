@@ -95,7 +95,7 @@ const VehicleCard = ({ vehicle, tenant, room, onEdit, onDelete }) => {
           </div>
           <div className="flex justify-between">
             <span className="text-sm text-gray-600">Đã gửi:</span>
-            <span className="font-medium text-blue-600">{parkingDays} ngày</span>
+            <span className="font-medium text-accent-violet">{parkingDays} ngày</span>
           </div>
         </div>
 

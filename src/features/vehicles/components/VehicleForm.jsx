@@ -189,7 +189,7 @@ const VehicleForm = ({
                 name="licensePlate"
                 value={formData.licensePlate}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase ${
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet uppercase ${
                   validationErrors.licensePlate ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="30A-12345"
@@ -208,7 +208,7 @@ const VehicleForm = ({
                 name="type"
                 value={formData.type}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                   validationErrors.type ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
@@ -233,7 +233,7 @@ const VehicleForm = ({
                   name="brand"
                   value={formData.brand}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                     validationErrors.brand ? 'border-red-500' : 'border-gray-300'
                   }`}
                 >
@@ -250,7 +250,7 @@ const VehicleForm = ({
                   name="brand"
                   value={formData.brand}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                     validationErrors.brand ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Nhập hãng xe"
@@ -270,7 +270,7 @@ const VehicleForm = ({
                 name="color"
                 value={formData.color}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                   validationErrors.color ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
@@ -296,7 +296,7 @@ const VehicleForm = ({
                 name="registrationDate"
                 value={formData.registrationDate}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                   validationErrors.registrationDate ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -315,7 +315,7 @@ const VehicleForm = ({
                 name="parkingFee"
                 value={formData.parkingFee}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                   validationErrors.parkingFee ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="100000"
@@ -334,7 +334,7 @@ const VehicleForm = ({
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet"
               >
                 <option value="active">Đang gửi</option>
                 <option value="inactive">Ngừng gửi</option>
@@ -351,7 +351,7 @@ const VehicleForm = ({
                 name="tenantId"
                 value={formData.tenantId}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                   validationErrors.tenantId ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
@@ -376,7 +376,7 @@ const VehicleForm = ({
                 name="roomId"
                 value={formData.roomId}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                   validationErrors.roomId ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
@@ -403,7 +403,7 @@ const VehicleForm = ({
               value={formData.notes}
               onChange={handleChange}
               rows="3"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet"
               placeholder="Ghi chú bổ sung (nếu có)"
             />
           </div>
@@ -456,7 +456,7 @@ const VehicleForm = ({
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-white bg-primary rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
             >
               {loading ? 'Đang xử lý...' : vehicle ? 'Cập nhật' : 'Thêm'}
             </button>

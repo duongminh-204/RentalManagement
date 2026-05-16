@@ -89,7 +89,7 @@ const RoomDetailModal = ({ room, isOpen, onClose, onEdit }) => {
                   {room.tenant.phone && (
                     <div className="flex items-center gap-2">
                       <Phone size={16} className="text-gray-500" />
-                      <a href={`tel:${room.tenant.phone}`} className="text-blue-600 hover:underline">
+                      <a href={`tel:${room.tenant.phone}`} className="text-accent-violet hover:underline">
                         {room.tenant.phone}
                       </a>
                     </div>
@@ -97,7 +97,7 @@ const RoomDetailModal = ({ room, isOpen, onClose, onEdit }) => {
                   {room.tenant.email && (
                     <div className="flex items-center gap-2">
                       <Mail size={16} className="text-gray-500" />
-                      <a href={`mailto:${room.tenant.email}`} className="text-blue-600 hover:underline">
+                      <a href={`mailto:${room.tenant.email}`} className="text-accent-violet hover:underline">
                         {room.tenant.email}
                       </a>
                     </div>
@@ -125,7 +125,7 @@ const RoomDetailModal = ({ room, isOpen, onClose, onEdit }) => {
                   onEdit(room);
                   onClose();
                 }}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition font-medium"
               >
                 Chỉnh sửa
               </button>

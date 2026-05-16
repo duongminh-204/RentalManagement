@@ -113,8 +113,8 @@ const RoomsList = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 w-full flex-1 font-sans">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen w-full flex-1 bg-surface-light font-sans">
+      <div className="page-content">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -128,7 +128,7 @@ const RoomsList = () => {
                 setShowForm(true);
                 setFormError(null);
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors font-medium"
+              className="btn-primary"
             >
               <Plus size={20} />
               Thêm phòng
@@ -146,8 +146,8 @@ const RoomsList = () => {
             onClick={() => setViewMode('floorplan')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
               viewMode === 'floorplan'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                ? 'bg-primary text-on-primary'
+                : 'border border-hairline-cloud bg-surface-light text-ink-deep hover:bg-surface-press'
             }`}
           >
             <LayoutGrid size={20} />
@@ -157,8 +157,8 @@ const RoomsList = () => {
             onClick={() => setViewMode('table')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
               viewMode === 'table'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                ? 'bg-primary text-on-primary'
+                : 'border border-hairline-cloud bg-surface-light text-ink-deep hover:bg-surface-press'
             }`}
           >
             <List size={20} />
@@ -206,7 +206,7 @@ const RoomsList = () => {
                   placeholder="Tìm kiếm theo số phòng..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet"
                 />
               </div>
 
@@ -215,7 +215,7 @@ const RoomsList = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet"
                 >
                   <option value="all">Tất cả trạng thái</option>
                   <option value="occupied">Đang thuê</option>

@@ -209,7 +209,7 @@ const FloorPlanCanvas = ({
       </Stage>
 
       {/* Info panel */}
-      <div className="absolute bottom-4 left-4 bg-white p-3 rounded shadow text-sm text-gray-700 max-w-xs">
+      <div className="absolute bottom-4 right-4 bg-white p-3 rounded shadow text-sm text-gray-700 max-w-xs">
         <div>💡 Cuộn để phóng to/thu nhỏ</div>
         <div className="text-xs text-gray-500 mt-1">Chuột phải + kéo để di chuyển</div>
       </div>

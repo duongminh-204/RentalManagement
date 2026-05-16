@@ -35,7 +35,7 @@ const FloorSelector = ({ selectedFloor, availableFloors, onFloorChange }) => {
             onClick={() => onFloorChange(floor)}
             className={`px-4 py-2 rounded-lg font-medium transition ${
               selectedFloor === floor
-                ? 'bg-blue-600 text-white'
+                ? 'bg-primary text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >

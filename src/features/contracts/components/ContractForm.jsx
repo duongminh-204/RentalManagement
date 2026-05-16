@@ -172,7 +172,7 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
                 name="contractNumber"
                 value={formData.contractNumber}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                   validationErrors.contractNumber ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="HD/2024/01/001"
@@ -191,7 +191,7 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
                 name="tenantId"
                 value={formData.tenantId}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                   validationErrors.tenantId ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
@@ -216,7 +216,7 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
                 name="roomId"
                 value={formData.roomId}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                   validationErrors.roomId ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
@@ -241,7 +241,7 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet"
               >
                 <option value="pending">Chờ ký</option>
                 <option value="active">Còn hiệu lực</option>
@@ -260,7 +260,7 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
                 name="startDate"
                 value={formData.startDate}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                   validationErrors.startDate ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -279,7 +279,7 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
                 name="endDate"
                 value={formData.endDate}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                   validationErrors.endDate ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -298,7 +298,7 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
                 name="rentalPrice"
                 value={formData.rentalPrice}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                   validationErrors.rentalPrice ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="3000000"
@@ -319,7 +319,7 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
               value={formData.terms}
               onChange={handleChange}
               rows="6"
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
                 validationErrors.terms ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Nhập các điều khoản (thanh toán, chính sách hủy, bảo hành nhà cửa, v.v.)"
@@ -339,7 +339,7 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
               value={formData.notes}
               onChange={handleChange}
               rows="3"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet"
               placeholder="Ghi chú bổ sung (nếu có)"
             />
           </div>
@@ -398,7 +398,7 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-white bg-primary rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
             >
               {loading ? 'Đang xử lý...' : contract ? 'Cập nhật' : 'Tạo'}
             </button>

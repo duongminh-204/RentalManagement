@@ -31,79 +31,76 @@ export default function RegisterForm() {
     };
 
     return (
-        <motion.div 
-            initial={{ opacity: 0, y: 30 }}
+        <motion.div
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 md:p-10 w-full"
+            transition={{ duration: 0.5 }}
+            className="card-light w-full p-8 md:p-10"
         >
-            <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-gray-900">Đăng Ký</h2>
-                <p className="text-gray-600 mt-2">Tạo tài khoản mới</p>
+            <div className="mb-8 text-center">
+                <p className="eyebrow mb-2 text-accent-violet-mid">Tài khoản mới</p>
+                <h2 className="font-display text-2xl font-semibold text-ink-deep">Đăng ký</h2>
             </div>
 
             {error && (
-                <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl mb-6"
-                >
+                <div className="mb-6 rounded-md border border-accent-pink/40 bg-accent-pink/10 px-4 py-3 text-sm text-ink-deep">
                     {error}
-                </motion.div>
+                </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label className="block text-left text-sm font-medium text-gray-700 mb-1">Họ và Tên</label>
+                    <label className="mb-1 block text-left text-sm font-medium text-ink-deep">Họ và tên</label>
                     <input
                         type="text"
                         value={formData.fullName}
                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                        className="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                        className="text-input"
                         placeholder="Nhập họ và tên"
                         required
                     />
                 </div>
 
-                <div>
-                    <label className="block text-left text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                        placeholder="email@example.com"
-                        required
-                    />
+                <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label className="mb-1 block text-left text-sm font-medium text-ink-deep">Email</label>
+                        <input
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            className="text-input"
+                            placeholder="email@example.com"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-left text-sm font-medium text-ink-deep">Số điện thoại</label>
+                        <input
+                            type="tel"
+                            value={formData.phone}
+                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            className="text-input"
+                            placeholder="03xxxxxxxx"
+                            required
+                        />
+                    </div>
                 </div>
 
                 <div>
-                    <label className="block text-left text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-                    <input
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                        placeholder="03xxxxxxxx"
-                        required
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-left text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
+                    <label className="mb-1 block text-left text-sm font-medium text-ink-deep">Mật khẩu</label>
                     <div className="relative">
                         <input
-                            type={showPassword ? "text" : "password"}
+                            type={showPassword ? 'text' : 'password'}
                             value={formData.password}
                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            className="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"
+                            className="text-input pr-12"
                             placeholder="Nhập mật khẩu"
                             required
                         />
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"
                         >
                             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
@@ -111,41 +108,35 @@ export default function RegisterForm() {
                 </div>
 
                 <div>
-                    <label className="block text-left text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu</label>
+                    <label className="mb-1 block text-left text-sm font-medium text-ink-deep">Xác nhận mật khẩu</label>
                     <div className="relative">
                         <input
-                            type={showConfirmPassword ? "text" : "password"}
+                            type={showConfirmPassword ? 'text' : 'password'}
                             value={formData.confirmPassword}
                             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                            className="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"
+                            className="text-input pr-12"
                             placeholder="Xác nhận mật khẩu"
                             required
                         />
                         <button
                             type="button"
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"
                         >
                             {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
                     </div>
                 </div>
 
-                <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-2xl font-semibold text-lg flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transition-all disabled:opacity-70"
-                >
-                    {loading ? "Đang đăng ký..." : "Đăng Ký"}
-                    <UserPlus size={24} />
-                </motion.button>
+                <button type="submit" disabled={loading} className="btn-primary w-full">
+                    {loading ? 'Đang đăng ký...' : 'Đăng ký'}
+                    {!loading && <UserPlus size={18} />}
+                </button>
             </form>
 
-            <p className="text-center mt-8 text-gray-600">
+            <p className="mt-8 text-center text-sm text-muted">
                 Đã có tài khoản?{' '}
-                <Link to="/login" className="text-blue-600 font-semibold hover:underline">
+                <Link to="/login" className="font-semibold text-ink-deep underline underline-offset-2">
                     Đăng nhập ngay
                 </Link>
             </p>

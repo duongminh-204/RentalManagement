@@ -132,7 +132,7 @@ const RoomFormComponent = ({
             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
               validationErrors.roomNumber
                 ? 'border-red-500 focus:ring-red-500'
-                : 'border-gray-300 focus:ring-blue-500'
+                : 'border-gray-300 focus-visible:outline-accent-violet'
             }`}
           />
           {validationErrors.roomNumber && (
@@ -152,7 +152,7 @@ const RoomFormComponent = ({
             value={formData.floor}
             onChange={handleChange}
             placeholder="1, 2, 3..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet transition-all"
           />
         </div>
 
@@ -172,7 +172,7 @@ const RoomFormComponent = ({
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
                 validationErrors.rentalPrice
                   ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-blue-500'
+                  : 'border-gray-300 focus-visible:outline-accent-violet'
               }`}
             />
             {validationErrors.rentalPrice && (
@@ -194,7 +194,7 @@ const RoomFormComponent = ({
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
                 validationErrors.electricityPrice
                   ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-blue-500'
+                  : 'border-gray-300 focus-visible:outline-accent-violet'
               }`}
             />
             {validationErrors.electricityPrice && (
@@ -216,7 +216,7 @@ const RoomFormComponent = ({
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
                 validationErrors.waterPrice
                   ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-blue-500'
+                  : 'border-gray-300 focus-visible:outline-accent-violet'
               }`}
             />
             {validationErrors.waterPrice && (
@@ -238,7 +238,7 @@ const RoomFormComponent = ({
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
                 validationErrors.internetPrice
                   ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-blue-500'
+                  : 'border-gray-300 focus-visible:outline-accent-violet'
               }`}
             />
             {validationErrors.internetPrice && (
@@ -258,7 +258,7 @@ const RoomFormComponent = ({
             onChange={handleChange}
             placeholder="Ví dụ: TV cáp, máy lạnh, tủ lạnh... (Mỗi dịch vụ cách nhau bằng dấu phẩy)"
             rows="3"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet transition-all resize-none"
           />
         </div>
 
@@ -271,7 +271,7 @@ const RoomFormComponent = ({
             name="status"
             value={formData.status}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet transition-all"
           >
             <option value="vacant">Trống</option>
             <option value="occupied">Đang thuê</option>
@@ -290,7 +290,7 @@ const RoomFormComponent = ({
             onChange={handleChange}
             placeholder="Thêm ghi chú hoặc mô tả chi tiết về phòng..."
             rows="3"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet transition-all resize-none"
           />
         </div>
 
@@ -299,7 +299,7 @@ const RoomFormComponent = ({
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 flex items-center justify-center gap-2 bg-primary text-white py-3 rounded-lg hover:opacity-90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Check size={20} />
             {loading ? 'Đang xử lý...' : 'Lưu'}

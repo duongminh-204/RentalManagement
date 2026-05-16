@@ -171,9 +171,9 @@ const ContractsList = ({ tenants = [], rooms = [] }) => {
 
   if (loading && contracts.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-surface-light flex items-center justify-center">
         <div className="text-center">
-          <Loader className="mx-auto text-blue-600 animate-spin mb-3" size={32} />
+          <Loader className="mx-auto text-accent-violet animate-spin mb-3" size={32} />
           <p className="text-gray-600">Đang tải dữ liệu...</p>
         </div>
       </div>
@@ -181,7 +181,7 @@ const ContractsList = ({ tenants = [], rooms = [] }) => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 w-full flex-1 font-sans">
+    <div className="min-h-screen bg-surface-light w-full flex-1 font-sans">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -196,7 +196,7 @@ const ContractsList = ({ tenants = [], rooms = [] }) => {
                 setShowForm(true);
                 setFormError(null);
               }}
-              className="mt-4 sm:mt-0 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="mt-4 sm:mt-0 inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition-colors font-medium"
             >
               <Plus size={20} /> Tạo hợp đồng
             </button>
@@ -244,7 +244,7 @@ const ContractsList = ({ tenants = [], rooms = [] }) => {
                 placeholder="Tìm theo số HĐ, tên khách, phòng..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet"
               />
             </div>
 
@@ -252,7 +252,7 @@ const ContractsList = ({ tenants = [], rooms = [] }) => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet"
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="active">Còn hiệu lực</option>

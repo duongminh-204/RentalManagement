@@ -1,29 +1,29 @@
 import { motion } from 'framer-motion';
 
-export default function AuthIllustration({ title, subtitle, icon = '🏠' }) {
+export default function AuthIllustration({ title, highlight, icon = '🏠' }) {
     return (
-        <motion.div 
-            initial={{ opacity: 0, x: -50 }}
+        <motion.div
+            initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-            className="hidden md:flex flex-col justify-center items-center text-white"
+            transition={{ duration: 0.7 }}
+            className="hidden flex-col items-center justify-center text-on-primary md:flex"
         >
-            <h1 className="text-5xl font-bold mb-8 text-center">{title}</h1>
-            
-            <p className="text-xl text-blue-200 text-center mb-20">
-                {subtitle}
+            <p className="eyebrow mb-4 text-on-dark-muted">RentalManagement</p>
+            <h1 className="font-display text-center text-5xl font-bold leading-[1.1] lg:text-6xl">
+                {title}{' '}
+                {highlight && <span className="chip-lime">{highlight}</span>}
+            </h1>
+            <p className="mt-6 max-w-sm text-center text-base leading-loose text-on-dark-muted">
+                Theo dõi phòng, khách thuê, hợp đồng và doanh thu — tất cả trên một bảng điều khiển gọn gàng.
             </p>
-
-            {/* Icon - tăng khoảng cách */}
-            <div className="relative mt-16">
-                <motion.div
-                    animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ repeat: Infinity, duration: 6 }}
-                    className="text-[180px] opacity-20"
-                >
-                    {icon}
-                </motion.div>
-            </div>
+            <motion.div
+                animate={{ rotate: [0, 8, -8, 0] }}
+                transition={{ repeat: Infinity, duration: 6 }}
+                className="mt-16 text-[140px] opacity-25"
+                aria-hidden
+            >
+                {icon}
+            </motion.div>
         </motion.div>
     );
 }

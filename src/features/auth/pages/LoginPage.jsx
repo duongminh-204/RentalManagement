@@ -3,18 +3,13 @@ import AuthIllustration from '../components/AuthIllustration';
 
 export default function LoginPage() {
     return (
-        <div className="h-screen w-screen bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900 flex items-center justify-center p-4 overflow-hidden">
-            {/* Background Animation */}
-            <div className="absolute inset-0 bg-[radial-gradient(at_center,#ffffff15_0%,transparent_70%)]" />
-
-            <div className="max-w-5xl w-full grid md:grid-cols-2 gap-8 items-center relative z-10">
-                {/* Phần Hình Ảnh + Illustration */}
-                <AuthIllustration 
-                    title="Quản Lý Nhà Trọ Thông Minh"
+        <div className="auth-canvas flex min-h-screen items-center justify-center p-4">
+            <div className="relative z-10 grid w-full max-w-5xl items-center gap-10 md:grid-cols-2">
+                <AuthIllustration
+                    title="Quản lý nhà trọ"
+                    highlight="thông minh"
                     icon="🏠"
                 />
-
-                {/* Form Đăng Nhập */}
                 <LoginForm />
             </div>
         </div>
