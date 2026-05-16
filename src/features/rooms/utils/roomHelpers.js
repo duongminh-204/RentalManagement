@@ -80,17 +80,44 @@ export const getDeviceStatusLabel = (status) => {
 
 export const normalizeUserFromApi = (user) => {
   if (!user) return null;
-  const fullName = user.fullName ?? user.name ?? user.userName ?? null;
+  const fullName = user.fullName ?? user.FullName ?? user.name ?? user.userName ?? null;
   const avatar = resolveMediaUrl(
-    user.avatar ?? user.avatarUrl ?? user.profilePicture ?? user.profilePictureUrl
+    user.avatar ??
+      user.Avatar ??
+      user.avatarUrl ??
+      user.profilePicture ??
+      user.profilePictureUrl
   );
   if (!fullName && !avatar) return null;
   return {
+    userId: user.userId ?? user.UserId ?? user.id ?? null,
     fullName: fullName ?? 'Khách thuê',
     avatar,
-    email: user.email ?? null,
-    phone: user.phone ?? user.phoneNumber ?? null,
+    email: user.email ?? user.Email ?? null,
+    phone: user.phone ?? user.phoneNumber ?? user.PhoneNumber ?? null,
   };
+};
+
+export const normalizeUsersList = (room) => {
+  const raw =
+    room?.users ??
+    room?.Users ??
+    room?.tenants ??
+    room?.Tenants ??
+    (room?.user ? [room.user] : []) ??
+    [];
+
+  const list = Array.isArray(raw) ? raw : [];
+  const seen = new Set();
+  return list
+    .map(normalizeUserFromApi)
+    .filter((u) => {
+      if (!u) return false;
+      const key = u.userId ?? u.fullName;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 };
 
 export const normalizeRoomImageFromApi = (img) => {
@@ -99,10 +126,12 @@ export const normalizeRoomImageFromApi = (img) => {
     const url = resolveMediaUrl(img);
     return url ? { id: null, url, caption: null } : null;
   }
-  const url = resolveMediaUrl(img.imageUrl ?? img.url ?? img.path ?? img.filePath);
+  const url = resolveMediaUrl(
+    img.imageUrl ?? img.ImageUrl ?? img.url ?? img.path ?? img.filePath
+  );
   if (!url) return null;
   return {
-    id: img.roomImageId ?? img.id ?? null,
+    id: img.roomImageId ?? img.RoomImageId ?? img.id ?? null,
     url,
     caption: img.caption ?? img.description ?? null,
   };
@@ -119,17 +148,18 @@ export const normalizeRoomFromApi = (room) => {
   const electricPrice = Number(room.electricPrice ?? room.electricityPrice) || 0;
   const waterPrice = Number(room.waterPrice) || 0;
 
-  const rawImages = room.roomImages ?? room.images ?? [];
+  const rawImages = room.roomImages ?? room.RoomImages ?? room.images ?? [];
   const roomImages = (Array.isArray(rawImages) ? rawImages : rawImages ? [rawImages] : [])
     .map(normalizeRoomImageFromApi)
     .filter(Boolean);
 
-  const rawDevices = room.devices ?? [];
+  const rawDevices = room.devices ?? room.Devices ?? [];
   const devices = (Array.isArray(rawDevices) ? rawDevices : [])
     .map(normalizeDeviceFromApi)
     .filter(Boolean);
 
-  const user = normalizeUserFromApi(
+  const users = normalizeUsersList(room);
+  const user = users[0] ?? normalizeUserFromApi(
     room.user ?? room.tenant ?? room.currentTenant ?? room.occupant
   );
 
@@ -158,6 +188,7 @@ export const normalizeRoomFromApi = (room) => {
     description: room.description ?? '',
     roomImages,
     devices,
+    users,
     user,
     tenant: user,
     floor: room.floor ?? deriveFloorFromRoomNumber(roomNumber || roomName),

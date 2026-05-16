@@ -42,7 +42,14 @@ const InfoRow = ({ icon: Icon, label, value, highlight }) => (
 
 const ImageGallery = ({ images }) => {
   const [index, setIndex] = useState(0);
-  if (!images?.length) return null;
+
+  if (!images?.length) {
+    return (
+      <div className="flex h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-hairline-cloud bg-surface-press/80 text-center">
+        <p className="text-sm font-medium text-muted">Chưa có ảnh phòng</p>
+      </div>
+    );
+  }
 
   const current = images[index];
   const hasMultiple = images.length > 1;
@@ -131,40 +138,62 @@ const DevicesList = ({ devices }) => {
   );
 };
 
-const TenantSection = ({ user }) => {
-  if (!user) return null;
-
+const UserAvatar = ({ user, size = 'md' }) => {
   const initials = user.fullName
     ?.split(' ')
     .map((w) => w[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
-
+  const sizeClass = size === 'lg' ? 'h-16 w-16 text-xl' : 'h-12 w-12 text-base';
+  if (user.avatar) {
+    return (
+      <img
+        src={user.avatar}
+        alt={user.fullName}
+        className={`${sizeClass} shrink-0 rounded-full border-2 border-accent-lime object-cover`}
+      />
+    );
+  }
   return (
-    <div className="rounded-2xl border border-hairline-violet bg-ink-deep p-5 text-on-primary">
-      <p className="eyebrow mb-4 text-on-dark-muted">Người thuê</p>
-      <div className="flex items-center gap-4">
-        {user.avatar ? (
-          <img
-            src={user.avatar}
-            alt={user.fullName}
-            className="h-16 w-16 rounded-full border-2 border-accent-lime object-cover"
-          />
-        ) : (
-          <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-accent-lime bg-accent-violet-deep font-display text-xl font-bold">
-            {initials || <User size={28} />}
-          </div>
-        )}
-        <div>
-          <h3 className="font-display text-xl font-semibold leading-tight">{user.fullName}</h3>
-          {user.phone && <p className="mt-1 text-sm text-on-dark-muted">{user.phone}</p>}
-          {user.email && <p className="text-sm text-on-dark-muted">{user.email}</p>}
-        </div>
-      </div>
+    <div
+      className={`${sizeClass} flex shrink-0 items-center justify-center rounded-full border-2 border-accent-lime bg-accent-violet-deep font-display font-bold`}
+    >
+      {initials || <User size={size === 'lg' ? 28 : 22} />}
     </div>
   );
 };
+
+const UsersList = ({ users }) => (
+  <div>
+    <div className="mb-3 flex items-center gap-2">
+      <Users size={18} className="text-accent-violet" />
+      <h3 className="font-display text-lg font-semibold text-ink-deep">Người thuê phòng</h3>
+      {users?.length > 0 && <span className="pill-violet">{users.length}</span>}
+    </div>
+    {!users?.length ? (
+      <p className="rounded-lg border border-dashed border-hairline-cloud px-4 py-6 text-center text-sm text-muted">
+        Chưa có người thuê trong phòng
+      </p>
+    ) : (
+      <ul className="space-y-3">
+        {users.map((user) => (
+          <li
+            key={user.userId ?? user.fullName}
+            className="flex items-center gap-4 rounded-xl border border-hairline-violet bg-ink-deep p-4 text-on-primary"
+          >
+            <UserAvatar user={user} size="lg" />
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-lg font-semibold leading-tight">{user.fullName}</p>
+              {user.phone && <p className="mt-0.5 text-sm text-on-dark-muted">{user.phone}</p>}
+              {user.email && <p className="text-sm text-on-dark-muted">{user.email}</p>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+);
 
 const RoomDetailModal = ({ room, isOpen, onClose, onEdit, loading = false }) => {
   if (!room && !isOpen) return null;
@@ -234,7 +263,16 @@ const RoomDetailModal = ({ room, isOpen, onClose, onEdit, loading = false }) => 
                 </motion.div>
               ) : room ? (
                 <div className="space-y-6">
-                  <ImageGallery images={room.roomImages} />
+                  <div>
+                    <div className="mb-3 flex items-center gap-2">
+                      <Building2 size={18} className="text-accent-violet" />
+                      <h3 className="font-display text-lg font-semibold text-ink-deep">Ảnh phòng</h3>
+                      {room.roomImages?.length > 0 && (
+                        <span className="pill-violet">{room.roomImages.length}</span>
+                      )}
+                    </div>
+                    <ImageGallery images={room.roomImages} />
+                  </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <InfoRow
@@ -271,7 +309,7 @@ const RoomDetailModal = ({ room, isOpen, onClose, onEdit, loading = false }) => 
                     </div>
                   )}
 
-                  <TenantSection user={room.user} />
+                  <UsersList users={room.users} />
 
                   <div>
                     <div className="mb-3 flex items-center gap-2">
