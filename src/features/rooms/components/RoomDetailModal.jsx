@@ -1,134 +1,307 @@
-import React from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, DollarSign, Phone, Mail, Calendar } from 'lucide-react';
+import {
+  X,
+  Building2,
+  Ruler,
+  Users,
+  Zap,
+  Droplets,
+  Banknote,
+  Package,
+  User,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  StickyNote,
+} from 'lucide-react';
+import RoomStatusBadge from '../../../components/common/RoomStatusBadge';
+import {
+  formatCurrency,
+  getRoomDisplayName,
+  getDeviceStatusLabel,
+} from '../utils/roomHelpers';
 
-const RoomDetailModal = ({ room, isOpen, onClose, onEdit }) => {
-  if (!room) return null;
+const InfoRow = ({ icon: Icon, label, value, highlight }) => (
+  <div className="flex items-start gap-3 rounded-lg border border-hairline-cloud bg-surface-light px-4 py-3">
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-press text-accent-violet">
+      <Icon size={18} aria-hidden />
+    </div>
+    <div className="min-w-0 flex-1">
+      <p className="text-xs font-medium uppercase tracking-wide text-accent-violet-mid">{label}</p>
+      <p
+        className={`mt-0.5 text-base font-medium leading-snug ${
+          highlight ? 'text-accent-violet' : 'text-ink-deep'
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  </div>
+);
 
-  const statusMap = {
-    vacant: { label: 'Trống', color: 'bg-blue-100 text-blue-800' },
-    occupied: { label: 'Đang thuê', color: 'bg-red-100 text-red-800' },
-    maintenance: { label: 'Bảo trì', color: 'bg-orange-100 text-orange-800' },
-  };
+const ImageGallery = ({ images }) => {
+  const [index, setIndex] = useState(0);
+  if (!images?.length) return null;
 
-  const status = statusMap[room.status] || statusMap.vacant;
+  const current = images[index];
+  const hasMultiple = images.length > 1;
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-hairline-cloud bg-ink-deep">
+      <img
+        src={current.url}
+        alt={current.caption || `Ảnh phòng ${index + 1}`}
+        className="h-52 w-full object-cover"
+      />
+      {hasMultiple && (
+        <>
+          <button
+            type="button"
+            onClick={() => setIndex((i) => (i - 1 + images.length) % images.length)}
+            className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-primary/80 p-2 text-on-primary backdrop-blur-sm transition hover:bg-primary"
+            aria-label="Ảnh trước"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIndex((i) => (i + 1) % images.length)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-primary/80 p-2 text-on-primary backdrop-blur-sm transition hover:bg-primary"
+            aria-label="Ảnh sau"
+          >
+            <ChevronRight size={18} />
+          </button>
+          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setIndex(i)}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === index ? 'w-6 bg-accent-lime' : 'w-1.5 bg-on-primary/50'
+                }`}
+                aria-label={`Xem ảnh ${i + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+const DevicesList = ({ devices }) => {
+  if (!devices?.length) {
+    return (
+      <p className="rounded-lg border border-dashed border-hairline-cloud px-4 py-6 text-center text-sm text-muted">
+        Chưa có thiết bị trong phòng
+      </p>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-hairline-cloud">
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="border-b border-hairline-cloud bg-surface-press">
+            <th className="px-4 py-2.5 font-semibold text-ink-deep">Thiết bị</th>
+            <th className="px-4 py-2.5 font-semibold text-ink-deep">SL</th>
+            <th className="px-4 py-2.5 font-semibold text-ink-deep">Trạng thái</th>
+            <th className="hidden px-4 py-2.5 font-semibold text-ink-deep sm:table-cell">Ghi chú</th>
+          </tr>
+        </thead>
+        <tbody>
+          {devices.map((device) => (
+            <tr
+              key={device.deviceId ?? device.deviceName}
+              className="border-b border-hairline-cloud last:border-0"
+            >
+              <td className="px-4 py-3 font-medium text-ink-deep">{device.deviceName}</td>
+              <td className="px-4 py-3 text-muted">{device.quantity}</td>
+              <td className="px-4 py-3">
+                <span className="pill-violet text-xs">{getDeviceStatusLabel(device.status)}</span>
+              </td>
+              <td className="hidden px-4 py-3 text-muted sm:table-cell">{device.note || '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const TenantSection = ({ user }) => {
+  if (!user) return null;
+
+  const initials = user.fullName
+    ?.split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <div className="rounded-2xl border border-hairline-violet bg-ink-deep p-5 text-on-primary">
+      <p className="eyebrow mb-4 text-on-dark-muted">Người thuê</p>
+      <div className="flex items-center gap-4">
+        {user.avatar ? (
+          <img
+            src={user.avatar}
+            alt={user.fullName}
+            className="h-16 w-16 rounded-full border-2 border-accent-lime object-cover"
+          />
+        ) : (
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-accent-lime bg-accent-violet-deep font-display text-xl font-bold">
+            {initials || <User size={28} />}
+          </div>
+        )}
+        <div>
+          <h3 className="font-display text-xl font-semibold leading-tight">{user.fullName}</h3>
+          {user.phone && <p className="mt-1 text-sm text-on-dark-muted">{user.phone}</p>}
+          {user.email && <p className="text-sm text-on-dark-muted">{user.email}</p>}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RoomDetailModal = ({ room, isOpen, onClose, onEdit, loading = false }) => {
+  if (!room && !isOpen) return null;
+
+  const displayName = room ? getRoomDisplayName(room) : '—';
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="room-detail-title"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default bg-transparent"
+            onClick={onClose}
+            aria-label="Đóng"
+          />
+
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-white rounded-lg shadow-lg max-w-md w-full p-6"
+            initial={{ scale: 0.96, opacity: 0, y: 12 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.96, opacity: 0, y: 12 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative z-10 flex max-h-[min(90vh,880px)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-hairline-cloud bg-surface-light shadow-[var(--shadow-card)]"
           >
-            {/* Header */}
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Phòng {room.roomNumber}
-                </h2>
-                <span className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-medium ${status.color}`}>
-                  {status.label}
-                </span>
+            <div className="border-b border-hairline-cloud px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="eyebrow mb-1">Chi tiết phòng</p>
+                  <h2
+                    id="room-detail-title"
+                    className="font-display text-2xl font-semibold leading-tight text-ink-deep sm:text-3xl"
+                  >
+                    <span className="chip-lime">{displayName}</span>
+                  </h2>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {room && <RoomStatusBadge status={room.status} />}
+                    {room?.buildingId != null && (
+                      <span className="inline-flex items-center gap-1 rounded-xs bg-surface-press px-2 py-1 text-xs font-medium text-muted">
+                        <Building2 size={12} />
+                        Tòa #{room.buildingId}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-md p-2 text-muted transition hover:bg-surface-press hover:text-ink-deep"
+                  aria-label="Dong"
+                >
+                  <X size={22} />
+                </button>
               </div>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition"
-              >
-                <X size={24} />
-              </button>
             </div>
 
-            {/* Room Details */}
-            <div className="space-y-4 mb-6 border-t border-b border-gray-200 py-4">
-              {room.area && (
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-500">📐 Diện tích:</span>
-                  <span className="font-medium">{room.area} m²</span>
-                </div>
-              )}
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {loading ? (
+                <motion.div className="flex flex-col items-center justify-center gap-3 py-16 text-muted">
+                  <Loader2 size={32} className="animate-spin text-accent-violet" />
+                  <p className="text-sm font-medium">Đang tải thông tin phòng…</p>
+                </motion.div>
+              ) : room ? (
+                <div className="space-y-6">
+                  <ImageGallery images={room.roomImages} />
 
-              {room.price && (
-                <div className="flex items-center gap-3">
-                  <DollarSign size={18} className="text-gray-500" />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <InfoRow
+                      icon={Banknote}
+                      label="Giá thuê / tháng"
+                      value={formatCurrency(room.price ?? room.rentalPrice)}
+                      highlight
+                    />
+                    <InfoRow
+                      icon={Zap}
+                      label="Giá điện"
+                      value={`${formatCurrency(room.electricPrice ?? room.electricityPrice)} / kWh`}
+                    />
+                    <InfoRow
+                      icon={Droplets}
+                      label="Giá nước"
+                      value={`${formatCurrency(room.waterPrice)} / m³`}
+                    />
+                    {room.area != null && (
+                      <InfoRow icon={Ruler} label="Diện tích" value={`${room.area} m²`} />
+                    )}
+                    {room.maxPeople != null && (
+                      <InfoRow icon={Users} label="Số người tối đa" value={room.maxPeople} />
+                    )}
+                  </div>
+
+                  {room.description && (
+                    <div className="rounded-xl border border-hairline-cloud bg-surface-press/60 p-4">
+                      <div className="mb-2 flex items-center gap-2 text-accent-violet-mid">
+                        <StickyNote size={16} />
+                        <span className="text-xs font-semibold uppercase tracking-wide">Mô tả</span>
+                      </div>
+                      <p className="text-sm leading-relaxed text-ink-deep">{room.description}</p>
+                    </div>
+                  )}
+
+                  <TenantSection user={room.user} />
+
                   <div>
-                    <span className="text-gray-500">Giá thuê:</span>
-                    <span className="font-medium ml-2">{room.price.toLocaleString()} VND/tháng</span>
+                    <div className="mb-3 flex items-center gap-2">
+                      <Package size={18} className="text-accent-violet" />
+                      <h3 className="font-display text-lg font-semibold text-ink-deep">
+                        Thiết bị trong phòng
+                      </h3>
+                      {room.devices?.length > 0 && (
+                        <span className="pill-violet">{room.devices.length}</span>
+                      )}
+                    </div>
+                    <DevicesList devices={room.devices} />
                   </div>
                 </div>
-              )}
-
-              {room.capacity && (
-                <div className="flex items-center gap-3">
-                  <User size={18} className="text-gray-500" />
-                  <span className="text-gray-500">
-                    Sức chứa: <span className="font-medium">{room.capacity} người</span>
-                  </span>
-                </div>
-              )}
-
-              {room.type && (
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-500">Loại phòng:</span>
-                  <span className="font-medium">{room.type}</span>
-                </div>
-              )}
+              ) : null}
             </div>
 
-            {/* Tenant Info */}
-            {room.status === 'occupied' && room.tenant && (
-              <div className="bg-blue-50 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Thông tin khách thuê</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <User size={16} className="text-gray-500" />
-                    <span>{room.tenant.name}</span>
-                  </div>
-                  {room.tenant.phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone size={16} className="text-gray-500" />
-                      <a href={`tel:${room.tenant.phone}`} className="text-accent-violet hover:underline">
-                        {room.tenant.phone}
-                      </a>
-                    </div>
-                  )}
-                  {room.tenant.email && (
-                    <div className="flex items-center gap-2">
-                      <Mail size={16} className="text-gray-500" />
-                      <a href={`mailto:${room.tenant.email}`} className="text-accent-violet hover:underline">
-                        {room.tenant.email}
-                      </a>
-                    </div>
-                  )}
-                  {room.tenant.checkInDate && (
-                    <div className="flex items-center gap-2">
-                      <Calendar size={16} className="text-gray-500" />
-                      <span>Nhận phòng: {new Date(room.tenant.checkInDate).toLocaleDateString('vi-VN')}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-3">
+            <div className="flex gap-3 border-t border-hairline-cloud px-6 py-4">
               <button
+                type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+                className="flex-1 rounded-md border border-hairline-cloud px-4 py-3 text-sm font-semibold text-ink-deep transition hover:bg-surface-press"
               >
                 Đóng
               </button>
-              <button
-                onClick={() => {
-                  onEdit(room);
-                  onClose();
-                }}
-                className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition font-medium"
-              >
-                Chỉnh sửa
-              </button>
+              {onEdit && room && (
+                <button type="button" onClick={() => { onEdit(room); onClose(); }} className="btn-primary flex-1">
+                  Chỉnh sửa
+                </button>
+              )}
             </div>
           </motion.div>
         </div>

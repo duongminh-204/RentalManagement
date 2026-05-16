@@ -1,10 +1,21 @@
+const API_ORIGIN = 'http://localhost:5193';
+
 // Format currency to Vietnamese Dong
 export const formatCurrency = (value) => {
-  if (!value) return '0 ₫';
+  if (value == null || value === '') return '0 ₫';
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
-    currency: 'VND'
-  }).format(value);
+    currency: 'VND',
+  }).format(Number(value) || 0);
+};
+
+export const resolveMediaUrl = (url) => {
+  if (!url) return null;
+  const s = String(url).trim();
+  if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('data:')) {
+    return s;
+  }
+  return s.startsWith('/') ? `${API_ORIGIN}${s}` : `${API_ORIGIN}/${s}`;
 };
 
 /** API status (Available, Occupied, ...) → frontend (vacant, occupied, maintenance) */
@@ -18,6 +29,16 @@ export const mapRoomStatusFromApi = (status) => {
     return 'vacant';
   }
   return 'vacant';
+};
+
+export const getRoomStatusLabel = (status) => {
+  const key = mapRoomStatusFromApi(status);
+  const labels = {
+    vacant: 'Trống',
+    occupied: 'Đang thuê',
+    maintenance: 'Bảo trì',
+  };
+  return labels[key] ?? String(status ?? '—');
 };
 
 /** Frontend status → API status */
@@ -34,25 +55,112 @@ export const deriveFloorFromRoomNumber = (roomNumber) => {
   return match ? parseInt(match[0], 10) || 1 : 1;
 };
 
+export const getRoomDisplayName = (room) =>
+  room?.roomName?.trim() || room?.roomNumber?.trim() || '—';
+
+export const normalizeDeviceFromApi = (device) => {
+  if (!device) return null;
+  return {
+    deviceId: device.deviceId ?? device.id,
+    roomId: device.roomId,
+    deviceName: device.deviceName ?? device.name ?? '',
+    quantity: Number(device.quantity) || 1,
+    status: device.status ?? 'Working',
+    note: device.note ?? null,
+  };
+};
+
+export const getDeviceStatusLabel = (status) => {
+  const normalized = String(status ?? '').trim().toLowerCase();
+  if (normalized === 'working' || normalized === 'ok') return 'Hoạt động';
+  if (normalized === 'broken' || normalized === 'faulty') return 'Hỏng';
+  if (normalized === 'repair' || normalized === 'repairing') return 'Đang sửa';
+  return status || '—';
+};
+
+export const normalizeUserFromApi = (user) => {
+  if (!user) return null;
+  const fullName = user.fullName ?? user.name ?? user.userName ?? null;
+  const avatar = resolveMediaUrl(
+    user.avatar ?? user.avatarUrl ?? user.profilePicture ?? user.profilePictureUrl
+  );
+  if (!fullName && !avatar) return null;
+  return {
+    fullName: fullName ?? 'Khách thuê',
+    avatar,
+    email: user.email ?? null,
+    phone: user.phone ?? user.phoneNumber ?? null,
+  };
+};
+
+export const normalizeRoomImageFromApi = (img) => {
+  if (!img) return null;
+  if (typeof img === 'string') {
+    const url = resolveMediaUrl(img);
+    return url ? { id: null, url, caption: null } : null;
+  }
+  const url = resolveMediaUrl(img.imageUrl ?? img.url ?? img.path ?? img.filePath);
+  if (!url) return null;
+  return {
+    id: img.roomImageId ?? img.id ?? null,
+    url,
+    caption: img.caption ?? img.description ?? null,
+  };
+};
+
 /** Chuẩn hóa 1 phòng từ response API .NET */
 export const normalizeRoomFromApi = (room) => {
   if (!room) return null;
 
   const id = room.id ?? room.roomId;
+  const roomNumber = room.roomNumber ?? '';
+  const roomName = room.roomName ?? room.roomNumber ?? '';
+  const price = Number(room.price ?? room.rentalPrice) || 0;
+  const electricPrice = Number(room.electricPrice ?? room.electricityPrice) || 0;
+  const waterPrice = Number(room.waterPrice) || 0;
+
+  const rawImages = room.roomImages ?? room.images ?? [];
+  const roomImages = (Array.isArray(rawImages) ? rawImages : rawImages ? [rawImages] : [])
+    .map(normalizeRoomImageFromApi)
+    .filter(Boolean);
+
+  const rawDevices = room.devices ?? [];
+  const devices = (Array.isArray(rawDevices) ? rawDevices : [])
+    .map(normalizeDeviceFromApi)
+    .filter(Boolean);
+
+  const user = normalizeUserFromApi(
+    room.user ?? room.tenant ?? room.currentTenant ?? room.occupant
+  );
 
   return {
     id,
     roomId: room.roomId ?? id,
-    roomNumber: room.roomNumber ?? '',
-    rentalPrice: Number(room.rentalPrice) || 0,
-    electricityPrice: Number(room.electricityPrice ?? room.electricPrice) || 0,
-    waterPrice: Number(room.waterPrice) || 0,
+    buildingId: room.buildingId ?? null,
+    roomNumber,
+    roomName,
+    status: mapRoomStatusFromApi(room.status),
+    apiStatus: room.status,
+    price,
+    rentalPrice: price,
+    electricPrice,
+    electricityPrice: electricPrice,
+    waterPrice,
     internetPrice: Number(room.internetPrice) || 0,
     additionalServices: room.additionalServices ?? '',
+    area: room.area != null ? Number(room.area) : null,
+    maxPeople:
+      room.maxPeople != null
+        ? Number(room.maxPeople)
+        : room.capacity != null
+          ? Number(room.capacity)
+          : null,
     description: room.description ?? '',
-    status: mapRoomStatusFromApi(room.status),
-    buildingId: room.buildingId ?? null,
-    floor: room.floor ?? deriveFloorFromRoomNumber(room.roomNumber),
+    roomImages,
+    devices,
+    user,
+    tenant: user,
+    floor: room.floor ?? deriveFloorFromRoomNumber(roomNumber || roomName),
     createdAt: room.createdAt,
     updatedAt: room.updatedAt,
   };
@@ -66,13 +174,17 @@ export const normalizeRoomsList = (payload) => {
 
 /** Gửi lên API khi tạo / cập nhật */
 export const denormalizeRoomForApi = (roomData) => ({
-  roomNumber: roomData.roomNumber,
-  rentalPrice: Number(roomData.rentalPrice) || 0,
+  roomNumber: roomData.roomNumber ?? roomData.roomName,
+  roomName: roomData.roomName ?? roomData.roomNumber,
+  rentalPrice: Number(roomData.rentalPrice ?? roomData.price) || 0,
+  price: Number(roomData.price ?? roomData.rentalPrice) || 0,
   electricPrice: Number(roomData.electricityPrice ?? roomData.electricPrice) || 0,
   waterPrice: Number(roomData.waterPrice) || 0,
   internetPrice: Number(roomData.internetPrice) || 0,
   additionalServices: roomData.additionalServices || null,
   description: roomData.description || null,
+  area: roomData.area != null ? Number(roomData.area) : null,
+  maxPeople: roomData.maxPeople != null ? Number(roomData.maxPeople) : null,
   status: mapRoomStatusToApi(roomData.status),
   ...(roomData.buildingId != null ? { buildingId: roomData.buildingId } : {}),
 });
@@ -81,16 +193,16 @@ export const denormalizeRoomForApi = (roomData) => ({
 export const formatRoomData = (room) => {
   return {
     ...room,
-    rentalPriceFormatted: formatCurrency(room.rentalPrice),
-    electricityPriceFormatted: formatCurrency(room.electricityPrice),
+    rentalPriceFormatted: formatCurrency(room.rentalPrice ?? room.price),
+    electricityPriceFormatted: formatCurrency(room.electricityPrice ?? room.electricPrice),
     waterPriceFormatted: formatCurrency(room.waterPrice),
-    internetPriceFormatted: formatCurrency(room.internetPrice)
+    internetPriceFormatted: formatCurrency(room.internetPrice),
   };
 };
 
 // Calculate total monthly cost for a room
 export const calculateRoomMonthlyCost = (room) => {
-  return room.rentalPrice + room.internetPrice;
+  return (room.rentalPrice ?? room.price ?? 0) + (room.internetPrice ?? 0);
 };
 
 // Parse additional services from string
@@ -98,8 +210,8 @@ export const parseAdditionalServices = (servicesString) => {
   if (!servicesString) return [];
   return servicesString
     .split(',')
-    .map(service => service.trim())
-    .filter(service => service.length > 0);
+    .map((service) => service.trim())
+    .filter((service) => service.length > 0);
 };
 
 // Format services for display

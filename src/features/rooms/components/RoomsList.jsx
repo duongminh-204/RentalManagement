@@ -7,6 +7,8 @@ import FloorPlanCanvas from './FloorPlanCanvas';
 import RoomStatusGuide from './RoomStatusGuide';
 import RoomDetailModal from './RoomDetailModal';
 import { useRooms } from '../hooks/useRooms';
+import { getRoomById } from '../api/roomsApi';
+import { normalizeRoomFromApi } from '../utils/roomHelpers';
 
 const RoomsList = () => {
   const { rooms, loading, error, addRoom, editRoom, changeRoomStatus, removeRoom } = useRooms();
@@ -20,6 +22,7 @@ const RoomsList = () => {
   const [viewMode, setViewMode] = useState('floorplan'); // 'floorplan' or 'table'
   const [selectedRoomDetail, setSelectedRoomDetail] = useState(null);
   const [showRoomDetail, setShowRoomDetail] = useState(false);
+  const [roomDetailLoading, setRoomDetailLoading] = useState(false);
 
   // Filter rooms for table view
   const filteredRooms = useMemo(() => {
@@ -73,10 +76,21 @@ const RoomsList = () => {
     }
   };
 
-  const handleRoomClick = (room) => {
-    console.log('Room clicked:', room);
-    setSelectedRoomDetail(room);
+  const handleRoomClick = async (room) => {
+    const roomId = room?.id ?? room?.roomId;
+    setSelectedRoomDetail(normalizeRoomFromApi(room));
     setShowRoomDetail(true);
+    setRoomDetailLoading(true);
+
+    try {
+      const payload = await getRoomById(roomId);
+      const detailed = normalizeRoomFromApi(payload?.data ?? payload);
+      if (detailed) setSelectedRoomDetail(detailed);
+    } catch (err) {
+      console.error('Error loading room detail:', err);
+    } finally {
+      setRoomDetailLoading(false);
+    }
   };
 
   const handleRoomHover = (room) => {
@@ -253,7 +267,11 @@ const RoomsList = () => {
           <RoomDetailModal
             room={selectedRoomDetail}
             isOpen={showRoomDetail}
-            onClose={() => setShowRoomDetail(false)}
+            loading={roomDetailLoading}
+            onClose={() => {
+              setShowRoomDetail(false);
+              setSelectedRoomDetail(null);
+            }}
             onEdit={(room) => {
               handleEdit(room);
               setShowRoomDetail(false);
