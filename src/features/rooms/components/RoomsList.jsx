@@ -2,27 +2,28 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Filter, LayoutGrid, List } from 'lucide-react';
 import RoomTable from '../../../components/tables/RoomTable';
-import RoomForm from './RoomForm';
 import FloorPlanCanvas from './FloorPlanCanvas';
 import RoomStatusGuide from './RoomStatusGuide';
 import RoomDetailModal from './RoomDetailModal';
+import RoomManagementPanel from './RoomManagementPanel';
 import { useRooms } from '../hooks/useRooms';
 import { getRoomById } from '../api/roomsApi';
 import { normalizeRoomFromApi } from '../utils/roomHelpers';
 
 const RoomsList = () => {
-  const { rooms, loading, error, addRoom, editRoom, changeRoomStatus, removeRoom } = useRooms();
+  const { rooms, loading, error, addRoom, editRoom, changeRoomStatus, removeRoom, refetch } =
+    useRooms();
 
-  const [showForm, setShowForm] = useState(false);
-  const [editingRoom, setEditingRoom] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [formLoading, setFormLoading] = useState(false);
-  const [formError, setFormError] = useState(null);
   const [viewMode, setViewMode] = useState('floorplan'); // 'floorplan' or 'table'
+  const [panelMode, setPanelMode] = useState(null); // null | 'create' | 'edit'
+  const [managementRoom, setManagementRoom] = useState(null);
+  const [panelLoading, setPanelLoading] = useState(false);
+  const [panelSaveLoading, setPanelSaveLoading] = useState(false);
+  const [panelSaveError, setPanelSaveError] = useState(null);
   const [selectedRoomDetail, setSelectedRoomDetail] = useState(null);
   const [showRoomDetail, setShowRoomDetail] = useState(false);
-  const [roomDetailLoading, setRoomDetailLoading] = useState(false);
 
   // Filter rooms for table view
   const filteredRooms = useMemo(() => {
@@ -33,64 +34,94 @@ const RoomsList = () => {
     });
   }, [rooms, searchTerm, statusFilter]);
 
-  const handleAddRoom = async (formData) => {
+  const loadRoomIntoPanel = async (roomId, fallback) => {
+    setPanelLoading(true);
+    setPanelSaveError(null);
     try {
-      setFormLoading(true);
-      setFormError(null);
-      await addRoom(formData);
-      setShowForm(false);
-      setEditingRoom(null);
+      const payload = await getRoomById(roomId);
+      const detailed = normalizeRoomFromApi(payload?.data ?? payload);
+      setManagementRoom(detailed || fallback);
     } catch (err) {
-      setFormError(err.response?.data?.message || 'Lỗi khi thêm phòng');
+      console.error('Error loading room detail:', err);
+      setManagementRoom(fallback);
     } finally {
-      setFormLoading(false);
+      setPanelLoading(false);
     }
   };
 
-  const handleEditRoom = async (formData) => {
+  const handlePanelRefresh = async () => {
+    const roomId = managementRoom?.id ?? managementRoom?.roomId;
+    if (!roomId) return;
+    await loadRoomIntoPanel(roomId, managementRoom);
+    await refetch();
+  };
+
+  const handlePanelSaveRoom = async (formData) => {
     try {
-      setFormLoading(true);
-      setFormError(null);
-      await editRoom(editingRoom.id, formData);
-      setShowForm(false);
-      setEditingRoom(null);
+      setPanelSaveLoading(true);
+      setPanelSaveError(null);
+      if (panelMode === 'create') {
+        const created = await addRoom(formData);
+        const newId = created?.id ?? created?.roomId;
+        setPanelMode('edit');
+        if (newId) {
+          await loadRoomIntoPanel(newId, created);
+        } else {
+          setManagementRoom(created);
+        }
+        await refetch();
+      } else {
+        const roomId = managementRoom?.id ?? managementRoom?.roomId;
+        await editRoom(roomId, formData);
+        await loadRoomIntoPanel(roomId, managementRoom);
+        await refetch();
+      }
     } catch (err) {
-      setFormError(err.response?.data?.message || 'Lỗi khi cập nhật phòng');
+      setPanelSaveError(err.response?.data?.message || 'Lỗi khi lưu phòng');
     } finally {
-      setFormLoading(false);
+      setPanelSaveLoading(false);
     }
+  };
+
+  const handleOpenCreatePanel = () => {
+    setPanelMode('create');
+    setManagementRoom(null);
+    setPanelSaveError(null);
+    setViewMode('floorplan');
+  };
+
+  const handleClosePanel = () => {
+    setPanelMode(null);
+    setManagementRoom(null);
+    setPanelSaveError(null);
   };
 
   const handleEdit = (room) => {
-    setEditingRoom(room);
-    setShowForm(true);
-    setFormError(null);
+    const roomId = room?.id ?? room?.roomId;
+    setPanelMode('edit');
+    setManagementRoom(normalizeRoomFromApi(room));
+    setPanelSaveError(null);
+    setViewMode('floorplan');
+    if (roomId) loadRoomIntoPanel(roomId, normalizeRoomFromApi(room));
   };
 
   const handleDelete = async (roomId) => {
     if (!window.confirm('Bạn có chắc muốn xóa phòng này?')) return;
     try {
       await removeRoom(roomId);
+      const currentId = managementRoom?.id ?? managementRoom?.roomId;
+      if (String(currentId) === String(roomId)) handleClosePanel();
     } catch (err) {
-      setFormError(err.response?.data?.message || 'Lỗi khi xóa phòng');
+      setPanelSaveError(err.response?.data?.message || 'Lỗi khi xóa phòng');
     }
   };
 
   const handleRoomClick = async (room) => {
     const roomId = room?.id ?? room?.roomId;
-    setSelectedRoomDetail(normalizeRoomFromApi(room));
-    setShowRoomDetail(true);
-    setRoomDetailLoading(true);
-
-    try {
-      const payload = await getRoomById(roomId);
-      const detailed = normalizeRoomFromApi(payload?.data ?? payload);
-      if (detailed) setSelectedRoomDetail(detailed);
-    } catch (err) {
-      console.error('Error loading room detail:', err);
-    } finally {
-      setRoomDetailLoading(false);
-    }
+    setPanelMode('edit');
+    setManagementRoom(normalizeRoomFromApi(room));
+    setPanelSaveError(null);
+    if (roomId) await loadRoomIntoPanel(roomId, normalizeRoomFromApi(room));
   };
 
   const handleRoomHover = (room) => {
@@ -137,14 +168,7 @@ const RoomsList = () => {
           className="flex flex-col sm:flex-row items-start sm:items-center justify-end mb-6 gap-4"
         >
           <div className="flex gap-3 w-full sm:w-auto">
-            <button
-              onClick={() => {
-                setEditingRoom(null);
-                setShowForm(true);
-                setFormError(null);
-              }}
-              className="btn-primary"
-            >
+            <button onClick={handleOpenCreatePanel} className="btn-primary">
               <Plus size={20} />
               Thêm phòng
             </button>
@@ -190,11 +214,23 @@ const RoomsList = () => {
             className="space-y-4"
           >
             <RoomStatusGuide />
-            <div className="h-96 overflow-hidden rounded-xl border border-hairline-cloud bg-surface-light p-2">
-              <FloorPlanCanvas
-                rooms={rooms}
-                onRoomClick={handleRoomClick}
-                onRoomHover={handleRoomHover}
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-stretch">
+              <div className="min-h-[420px] overflow-hidden rounded-xl border border-hairline-cloud bg-surface-light p-2 lg:min-h-[520px]">
+                <FloorPlanCanvas
+                  rooms={rooms}
+                  onRoomClick={handleRoomClick}
+                  onRoomHover={handleRoomHover}
+                />
+              </div>
+              <RoomManagementPanel
+                room={panelMode === 'create' ? null : managementRoom}
+                mode={panelMode === 'create' ? 'create' : 'edit'}
+                loading={panelLoading}
+                onClose={handleClosePanel}
+                onSaveRoom={panelMode ? handlePanelSaveRoom : undefined}
+                onRefresh={handlePanelRefresh}
+                saveLoading={panelSaveLoading}
+                saveError={panelSaveError}
               />
             </div>
           </motion.div>
@@ -267,11 +303,7 @@ const RoomsList = () => {
           <RoomDetailModal
             room={selectedRoomDetail}
             isOpen={showRoomDetail}
-            loading={roomDetailLoading}
-            onClose={() => {
-              setShowRoomDetail(false);
-              setSelectedRoomDetail(null);
-            }}
+            onClose={() => setShowRoomDetail(false)}
             onEdit={(room) => {
               handleEdit(room);
               setShowRoomDetail(false);
@@ -280,42 +312,6 @@ const RoomsList = () => {
         )}
       </AnimatePresence>
 
-      {/* Form Modal */}
-      <AnimatePresence>
-        {showForm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-            onClick={() => {
-              setShowForm(false);
-              setEditingRoom(null);
-              setFormError(null);
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-            >
-              <RoomForm
-                initialData={editingRoom}
-                onSubmit={editingRoom ? handleEditRoom : handleAddRoom}
-                onCancel={() => {
-                  setShowForm(false);
-                  setEditingRoom(null);
-                  setFormError(null);
-                }}
-                loading={formLoading}
-                error={formError}
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

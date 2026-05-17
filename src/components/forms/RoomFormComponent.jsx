@@ -11,12 +11,12 @@ const RoomFormComponent = ({
 }) => {
   const [formData, setFormData] = useState({
     roomNumber: '',
-    floor: 1,
+    buildingId: 1,
     rentalPrice: '',
     electricityPrice: '',
     waterPrice: '',
-    internetPrice: '',
-    additionalServices: '',
+    area: '',
+    maxPeople: '',
     status: 'vacant',
     description: ''
   });
@@ -26,13 +26,13 @@ const RoomFormComponent = ({
   useEffect(() => {
     if (initialData) {
       setFormData({
-        roomNumber: initialData.roomNumber || '',
-        floor: initialData.floor || 1,
-        rentalPrice: initialData.rentalPrice || '',
-        electricityPrice: initialData.electricityPrice || '',
-        waterPrice: initialData.waterPrice || '',
-        internetPrice: initialData.internetPrice || '',
-        additionalServices: initialData.additionalServices || '',
+        roomNumber: initialData.roomNumber || initialData.roomName || '',
+        buildingId: initialData.buildingId ?? 1,
+        rentalPrice: initialData.rentalPrice ?? initialData.price ?? '',
+        electricityPrice: initialData.electricityPrice ?? initialData.electricPrice ?? '',
+        waterPrice: initialData.waterPrice ?? '',
+        area: initialData.area ?? '',
+        maxPeople: initialData.maxPeople ?? '',
         status: initialData.status || 'vacant',
         description: initialData.description || ''
       });
@@ -58,10 +58,6 @@ const RoomFormComponent = ({
       errors.waterPrice = 'Giá nước không hợp lệ';
     }
     
-    if (!formData.internetPrice || formData.internetPrice < 0) {
-      errors.internetPrice = 'Giá internet không hợp lệ';
-    }
-
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -139,25 +135,14 @@ const RoomFormComponent = ({
             <p className="text-red-500 text-sm mt-1">{validationErrors.roomNumber}</p>
           )}
         </div>
-
-        {/* Tầng */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Tầng <span className="text-red-500">*</span>
+            Tòa nhà (ID) <span className="text-red-500">*</span>
           </label>
-          <input
-            type="number"
-            name="floor"
-            min="1"
-            value={formData.floor}
-            onChange={handleChange}
-            placeholder="1, 2, 3..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet transition-all"
-          />
+          <input type="number" name="buildingId" min="1" value={formData.buildingId} onChange={handleChange} className="text-input" />
         </div>
 
-        {/* Grid 2 cột */}
-        <div className="grid grid-cols-2 gap-6">
+        <motion.div className="grid grid-cols-2 gap-6">
           {/* Giá thuê */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -223,45 +208,18 @@ const RoomFormComponent = ({
               <p className="text-red-500 text-sm mt-1">{validationErrors.waterPrice}</p>
             )}
           </div>
-
-          {/* Giá internet */}
+        </motion.div>
+        {/* Diện tích & sức chứa */}
+        <div className="grid grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Giá internet (₫/tháng) <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              name="internetPrice"
-              value={formData.internetPrice}
-              onChange={handleChange}
-              placeholder="0"
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
-                validationErrors.internetPrice
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus-visible:outline-accent-violet'
-              }`}
-            />
-            {validationErrors.internetPrice && (
-              <p className="text-red-500 text-sm mt-1">{validationErrors.internetPrice}</p>
-            )}
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Diện tích (m²)</label>
+            <input type="number" name="area" min="0" step="0.1" value={formData.area} onChange={handleChange} className="text-input" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Số người tối đa</label>
+            <input type="number" name="maxPeople" min="1" value={formData.maxPeople} onChange={handleChange} className="text-input" />
           </div>
         </div>
-
-        {/* Dịch vụ phụ trội */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Dịch vụ phụ trội
-          </label>
-          <textarea
-            name="additionalServices"
-            value={formData.additionalServices}
-            onChange={handleChange}
-            placeholder="Ví dụ: TV cáp, máy lạnh, tủ lạnh... (Mỗi dịch vụ cách nhau bằng dấu phẩy)"
-            rows="3"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet transition-all resize-none"
-          />
-        </div>
-
         {/* Trạng thái */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">

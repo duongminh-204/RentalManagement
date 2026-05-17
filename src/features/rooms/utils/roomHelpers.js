@@ -58,6 +58,19 @@ export const deriveFloorFromRoomNumber = (roomNumber) => {
 export const getRoomDisplayName = (room) =>
   room?.roomName?.trim() || room?.roomNumber?.trim() || '—';
 
+export const normalizeRoomServiceFromApi = (item) => {
+  if (!item) return null;
+  return {
+    roomServiceId: item.roomServiceId ?? item.id,
+    roomId: item.roomId,
+    serviceId: item.serviceId,
+    serviceName: item.serviceName ?? item.name ?? '',
+    unitPrice: Number(item.unitPrice) || 0,
+    unit: item.unit ?? null,
+    quantity: Number(item.quantity) || 1,
+  };
+};
+
 export const normalizeDeviceFromApi = (device) => {
   if (!device) return null;
   return {
@@ -90,6 +103,7 @@ export const normalizeUserFromApi = (user) => {
   );
   if (!fullName && !avatar) return null;
   return {
+    contractId: user.contractId ?? user.ContractId ?? null,
     userId: user.userId ?? user.UserId ?? user.id ?? null,
     fullName: fullName ?? 'Khách thuê',
     avatar,
@@ -158,6 +172,11 @@ export const normalizeRoomFromApi = (room) => {
     .map(normalizeDeviceFromApi)
     .filter(Boolean);
 
+  const rawServices = room.roomServices ?? room.RoomServices ?? [];
+  const roomServices = (Array.isArray(rawServices) ? rawServices : [])
+    .map(normalizeRoomServiceFromApi)
+    .filter(Boolean);
+
   const users = normalizeUsersList(room);
   const user = users[0] ?? normalizeUserFromApi(
     room.user ?? room.tenant ?? room.currentTenant ?? room.occupant
@@ -188,6 +207,7 @@ export const normalizeRoomFromApi = (room) => {
     description: room.description ?? '',
     roomImages,
     devices,
+    roomServices,
     users,
     user,
     tenant: user,

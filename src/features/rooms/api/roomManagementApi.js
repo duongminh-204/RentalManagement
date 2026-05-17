@@ -1,0 +1,60 @@
+import api from '../../../utils/api';
+
+export const getServiceCatalog = async () => {
+  const { data } = await api.get('/room-management/services');
+  return data;
+};
+
+export const getTenantCandidates = async () => {
+  const { data } = await api.get('/room-management/tenants/candidates');
+  return data;
+};
+
+export const addRoomImage = async (roomId, imageUrl) => {
+  const { data } = await api.post(`/room-management/rooms/${roomId}/images`, { imageUrl });
+  return data;
+};
+
+export const deleteRoomImage = async (roomId, imageId) => {
+  await api.delete(`/room-management/rooms/${roomId}/images/${imageId}`);
+};
+
+export const addDevice = async (roomId, payload) => {
+  const { data } = await api.post(`/room-management/rooms/${roomId}/devices`, payload);
+  return data;
+};
+
+export const updateDevice = async (roomId, deviceId, payload) => {
+  const { data } = await api.put(`/room-management/rooms/${roomId}/devices/${deviceId}`, payload);
+  return data;
+};
+
+export const deleteDevice = async (roomId, deviceId) => {
+  await api.delete(`/room-management/rooms/${roomId}/devices/${deviceId}`);
+};
+
+export const assignRoomService = async (roomId, payload) => {
+  const { data } = await api.post(`/room-management/rooms/${roomId}/services`, payload);
+  return data;
+};
+
+export const updateRoomService = async (roomId, roomServiceId, payload) => {
+  const { data } = await api.put(
+    `/room-management/rooms/${roomId}/services/${roomServiceId}`,
+    payload
+  );
+  return data;
+};
+
+export const deleteRoomService = async (roomId, roomServiceId) => {
+  await api.delete(`/room-management/rooms/${roomId}/services/${roomServiceId}`);
+};
+
+export const assignTenant = async (roomId, payload) => {
+  const { data } = await api.post(`/room-management/rooms/${roomId}/tenants`, payload);
+  return data;
+};
+
+export const removeTenant = async (roomId, contractId) => {
+  await api.delete(`/room-management/rooms/${roomId}/tenants/${contractId}`);
+};

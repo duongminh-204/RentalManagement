@@ -29,7 +29,7 @@ const FloorSelector = ({ selectedFloor, availableFloors, onFloorChange }) => {
       </button>
 
       <div className="flex gap-2">
-        {availableFloors.map(floor => (
+        {availableFloors.map(floor => ( 
           <button
             key={floor}
             onClick={() => onFloorChange(floor)}
