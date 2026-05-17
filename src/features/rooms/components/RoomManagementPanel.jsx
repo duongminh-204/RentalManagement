@@ -10,10 +10,47 @@ import {
   Trash2,
   Save,
   Loader2,
+  FileText,
+  Download,
+  Pencil,
+  RefreshCw,
 } from 'lucide-react';
 import RoomStatusBadge from '../../../components/common/RoomStatusBadge';
 import { formatCurrency, getRoomDisplayName } from '../utils/roomHelpers';
 import * as roomMgmtApi from '../api/roomManagementApi';
+import {
+  getContracts,
+  getContractsByRoomId,
+  createContract,
+  updateContract,
+  deleteContract,
+  uploadContractFile,
+  downloadContractFile,
+  renewContract,
+} from '../../contracts/api/contractsApi';
+import {
+  normalizeContractsList,
+  filterContractsByRoomId,
+  getActiveContractForRoom,
+  getContractStatusLabel,
+  formatDate as formatContractDate,
+  calculateDaysUntilExpiry,
+  calculateContractDuration,
+} from '../../contracts/utils/contractHelpers';
+import { getTenants } from '../../tenants/api/tenantsApi';
+import { normalizeTenantsList } from '../../tenants/utils/tenantHelpers';
+import ContractForm from '../../contracts/components/ContractForm';
+
+const contractStatusPanelClass = (status) => {
+  const map = {
+    active: 'border-accent-lime/40 bg-accent-lime/10 text-accent-lime',
+    expiring_soon: 'border-orange-400/40 bg-orange-500/10 text-orange-400',
+    expired: 'border-accent-pink/40 bg-accent-pink/10 text-accent-pink',
+    terminated: 'border-hairline-cloud bg-surface-press text-muted',
+    pending: 'border-accent-violet/40 bg-accent-violet/10 text-accent-violet',
+  };
+  return map[status] || 'border-hairline-cloud bg-surface-press text-muted';
+};
 
 const TABS = [
   { id: 'info', label: 'Thông tin', icon: Home },
@@ -61,6 +98,13 @@ const RoomManagementPanel = ({
   });
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState(null);
+  const [roomContracts, setRoomContracts] = useState([]);
+  const [contractsLoading, setContractsLoading] = useState(false);
+  const [tenantOptions, setTenantOptions] = useState([]);
+  const [showContractForm, setShowContractForm] = useState(false);
+  const [editingContract, setEditingContract] = useState(null);
+  const [contractFormLoading, setContractFormLoading] = useState(false);
+  const [contractFormError, setContractFormError] = useState(null);
 
   const roomId = room?.id ?? room?.roomId;
   const isCreate = mode === 'create';
@@ -101,6 +145,129 @@ const RoomManagementPanel = ({
   useEffect(() => {
     if (canManageExtras) loadCatalogs();
   }, [canManageExtras, loadCatalogs]);
+
+  const loadRoomContracts = useCallback(async () => {
+    if (!roomId) {
+      setRoomContracts([]);
+      return;
+    }
+    setContractsLoading(true);
+    try {
+      let payload;
+      try {
+        payload = await getContractsByRoomId(roomId);
+      } catch {
+        payload = await getContracts();
+      }
+      let list = filterContractsByRoomId(normalizeContractsList(payload), roomId);
+      if (!list.length && room?.contracts?.length) {
+        list = room.contracts;
+      }
+      setRoomContracts(list);
+    } catch (e) {
+      console.error(e);
+      setRoomContracts(room?.contracts ?? []);
+    } finally {
+      setContractsLoading(false);
+    }
+  }, [roomId, room?.contracts]);
+
+  const loadTenantOptions = useCallback(async () => {
+    try {
+      const data = await getTenants();
+      setTenantOptions(normalizeTenantsList(data));
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (canManageExtras) {
+      loadRoomContracts();
+      loadTenantOptions();
+    } else {
+      setRoomContracts([]);
+    }
+  }, [canManageExtras, loadRoomContracts, loadTenantOptions]);
+
+  const activeContract = getActiveContractForRoom(roomContracts);
+  const panelRoomOption = room
+    ? [{ id: roomId, roomNumber: room.roomNumber || room.roomName }]
+    : [];
+
+  const tenantNameById = (tenantId) => {
+    const fromRoom = (room?.users || []).find(
+      (u) => String(u.userId) === String(tenantId)
+    );
+    if (fromRoom?.fullName) return fromRoom.fullName;
+    return tenantOptions.find((t) => String(t.id) === String(tenantId))?.fullName;
+  };
+
+  const handleContractSubmit = async (formData) => {
+    setContractFormLoading(true);
+    setContractFormError(null);
+    try {
+      const { contractFile, ...contractData } = formData;
+      const payload = { ...contractData, roomId: roomId ?? contractData.roomId };
+      if (editingContract?.id) {
+        await updateContract(editingContract.id, payload);
+        if (contractFile && typeof contractFile !== 'string') {
+          await uploadContractFile(editingContract.id, contractFile);
+        }
+      } else {
+        const created = await createContract(payload);
+        const newId = created?.id ?? created?.data?.id;
+        if (contractFile && newId) {
+          await uploadContractFile(newId, contractFile);
+        }
+      }
+      setShowContractForm(false);
+      setEditingContract(null);
+      await loadRoomContracts();
+      await onRefresh?.();
+    } catch (err) {
+      setContractFormError(err.response?.data?.message || 'Lỗi khi lưu hợp đồng');
+    } finally {
+      setContractFormLoading(false);
+    }
+  };
+
+  const handleContractDelete = async (contractId) => {
+    if (!window.confirm('Bạn có chắc muốn xóa hợp đồng này?')) return;
+    await runAction(async () => {
+      await deleteContract(contractId);
+      await loadRoomContracts();
+    });
+  };
+
+  const handleContractDownload = async (contract) => {
+    try {
+      setLocalError(null);
+      const blob = await downloadContractFile(contract.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Hop_dong_${contract.contractNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      setLocalError(err.response?.data?.message || 'Lỗi khi tải file hợp đồng');
+    }
+  };
+
+  const handleContractRenew = async (contract) => {
+    const newEndDate = new Date(contract.endDate);
+    newEndDate.setFullYear(newEndDate.getFullYear() + 1);
+    await runAction(async () => {
+      await renewContract(contract.id, {
+        newEndDate: newEndDate.toISOString().split('T')[0],
+        notes: 'Gia hạn tự động 12 tháng',
+      });
+      await loadRoomContracts();
+    });
+  };
 
   const handleInfoChange = (e) => {
     const { name, value } = e.target;
@@ -363,6 +530,178 @@ const RoomManagementPanel = ({
                     className="text-input resize-none"
                   />
                 </div>
+
+                {canManageExtras && (
+                  <section className="space-y-3 rounded-xl border border-hairline-violet bg-ink-deep p-4 text-on-primary">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <FileText size={18} className="text-accent-lime" />
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-on-dark-muted">
+                          Hợp đồng thuê
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingContract(null);
+                          setContractFormError(null);
+                          setShowContractForm(true);
+                        }}
+                        className="flex items-center gap-1 rounded-lg bg-accent-lime px-2.5 py-1.5 text-xs font-semibold text-ink-deep transition hover:opacity-90"
+                      >
+                        <Plus size={14} />
+                        {activeContract ? 'Thêm' : 'Tạo HĐ'}
+                      </button>
+                    </div>
+
+                    {contractsLoading ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="animate-spin text-accent-lime" size={22} />
+                      </div>
+                    ) : activeContract ? (
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div>
+                            <p className="font-display text-lg font-semibold">
+                              {activeContract.contractNumber}
+                            </p>
+                            <p className="mt-0.5 text-xs text-on-dark-muted">
+                              {tenantNameById(activeContract.tenantId) || '—'}
+                            </p>
+                          </div>
+                          <span
+                            className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase ${contractStatusPanelClass(activeContract.status)}`}
+                          >
+                            {getContractStatusLabel(activeContract.status)}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <p className="text-[10px] uppercase text-on-dark-muted">Thời hạn</p>
+                            <p className="font-medium">
+                              {formatContractDate(activeContract.startDate)} →{' '}
+                              {formatContractDate(activeContract.endDate)}
+                            </p>
+                            <p className="text-xs text-on-dark-muted">
+                              {calculateContractDuration(
+                                activeContract.startDate,
+                                activeContract.endDate
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase text-on-dark-muted">Giá thuê</p>
+                            <p className="font-medium text-accent-lime">
+                              {formatCurrency(activeContract.rentalPrice)}/tháng
+                            </p>
+                          </div>
+                        </div>
+                        {activeContract.terms && (
+                          <p className="border-t border-hairline-violet pt-2 text-xs text-on-dark-muted line-clamp-2">
+                            {activeContract.terms}
+                          </p>
+                        )}
+                        {activeContract.notes && (
+                          <p className="text-xs italic text-on-dark-muted">{activeContract.notes}</p>
+                        )}
+                        {activeContract.endDate && (
+                          <p className="text-xs">
+                            {(() => {
+                              const days = calculateDaysUntilExpiry(activeContract.endDate);
+                              if (days < 0) {
+                                return (
+                                  <span className="text-accent-pink">
+                                    Đã hết hạn {Math.abs(days)} ngày
+                                  </span>
+                                );
+                              }
+                              if (days <= 30) {
+                                return (
+                                  <span className="text-orange-400">
+                                    Sắp hết hạn trong {days} ngày
+                                  </span>
+                                );
+                              }
+                              return (
+                                <span className="text-on-dark-muted">Còn {days} ngày</span>
+                              );
+                            })()}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-2 border-t border-hairline-violet pt-3">
+                          {activeContract.fileUrl && (
+                            <button
+                              type="button"
+                              onClick={() => handleContractDownload(activeContract)}
+                              className="flex items-center gap-1 rounded-lg border border-hairline-violet px-2.5 py-1.5 text-xs font-medium transition hover:bg-on-dark-faint"
+                            >
+                              <Download size={14} />
+                              Tải file
+                            </button>
+                          )}
+                          {(activeContract.status === 'expiring_soon' ||
+                            activeContract.status === 'expired') && (
+                            <button
+                              type="button"
+                              onClick={() => handleContractRenew(activeContract)}
+                              disabled={busy}
+                              className="flex items-center gap-1 rounded-lg border border-accent-lime/50 px-2.5 py-1.5 text-xs font-medium text-accent-lime transition hover:bg-on-dark-faint"
+                            >
+                              <RefreshCw size={14} />
+                              Gia hạn
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingContract(activeContract);
+                              setContractFormError(null);
+                              setShowContractForm(true);
+                            }}
+                            className="flex items-center gap-1 rounded-lg border border-hairline-violet px-2.5 py-1.5 text-xs font-medium transition hover:bg-on-dark-faint"
+                          >
+                            <Pencil size={14} />
+                            Sửa
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleContractDelete(activeContract.id)}
+                            disabled={busy}
+                            className="flex items-center gap-1 rounded-lg border border-accent-pink/40 px-2.5 py-1.5 text-xs font-medium text-accent-pink transition hover:bg-on-dark-faint"
+                          >
+                            <Trash2 size={14} />
+                            Xóa
+                          </button>
+                        </div>
+                        {roomContracts.length > 1 && (
+                          <details className="text-xs text-on-dark-muted">
+                            <summary className="cursor-pointer font-medium">
+                              {roomContracts.length - 1} hợp đồng khác
+                            </summary>
+                            <ul className="mt-2 space-y-2">
+                              {roomContracts
+                                .filter((c) => c.id !== activeContract.id)
+                                .map((c) => (
+                                  <li
+                                    key={c.id}
+                                    className="flex items-center justify-between rounded-lg border border-hairline-violet/50 px-2 py-1.5"
+                                  >
+                                    <span>{c.contractNumber}</span>
+                                    <span>{getContractStatusLabel(c.status)}</span>
+                                  </li>
+                                ))}
+                            </ul>
+                          </details>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="py-2 text-center text-sm text-on-dark-muted">
+                        Chưa có hợp đồng cho phòng này
+                      </p>
+                    )}
+                  </section>
+                )}
+
                 <button type="submit" disabled={saveLoading || busy} className="btn-primary w-full">
                   <Save size={18} />
                   {saveLoading ? 'Đang lưu…' : isCreate ? 'Tạo phòng' : 'Lưu thông tin'}
@@ -624,6 +963,23 @@ const RoomManagementPanel = ({
           </>
         )}
       </div>
+
+      {showContractForm && canManageExtras && (
+        <ContractForm
+          contract={editingContract}
+          tenants={tenantOptions}
+          rooms={panelRoomOption}
+          fixedRoomId={roomId}
+          onSubmit={handleContractSubmit}
+          onCancel={() => {
+            setShowContractForm(false);
+            setEditingContract(null);
+            setContractFormError(null);
+          }}
+          loading={contractFormLoading}
+          error={contractFormError}
+        />
+      )}
     </aside>
   );
 };

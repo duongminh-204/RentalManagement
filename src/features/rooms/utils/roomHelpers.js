@@ -1,3 +1,8 @@
+import {
+  normalizeContractsList,
+  filterContractsByRoomId,
+} from '../../contracts/utils/contractHelpers';
+
 const API_ORIGIN = 'http://localhost:5193';
 
 // Format currency to Vietnamese Dong
@@ -182,6 +187,15 @@ export const normalizeRoomFromApi = (room) => {
     room.user ?? room.tenant ?? room.currentTenant ?? room.occupant
   );
 
+  const rawContracts =
+    room.contracts ??
+    room.Contracts ??
+    (room.contract || room.Contract ? [room.contract ?? room.Contract] : []);
+  const contracts = filterContractsByRoomId(
+    normalizeContractsList(rawContracts),
+    id
+  );
+
   return {
     id,
     roomId: room.roomId ?? id,
@@ -211,6 +225,7 @@ export const normalizeRoomFromApi = (room) => {
     users,
     user,
     tenant: user,
+    contracts,
     floor: room.floor ?? deriveFloorFromRoomNumber(roomNumber || roomName),
     createdAt: room.createdAt,
     updatedAt: room.updatedAt,

@@ -10,6 +10,16 @@ export const getContracts = async (params = {}) => {
   }
 };
 
+// Get contracts for a specific room
+export const getContractsByRoomId = async (roomId) => {
+  try {
+    const response = await api.get('/contracts', { params: { roomId } });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Get contract by ID
 export const getContractById = async (id) => {
   try {

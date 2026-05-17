@@ -2,7 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { X, Upload, AlertCircle } from 'lucide-react';
 import { validateContractDates, formatDate, validateContractNumber } from '../utils/contractHelpers';
 
-const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onCancel, loading = false, error = null }) => {
+const ContractForm = ({
+  contract = null,
+  tenants = [],
+  rooms = [],
+  fixedRoomId = null,
+  onSubmit,
+  onCancel,
+  loading = false,
+  error = null,
+}) => {
   const [formData, setFormData] = useState({
     contractNumber: '',
     tenantId: '',
@@ -20,11 +29,17 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
   const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
+    if (fixedRoomId != null && fixedRoomId !== '') {
+      setFormData((prev) => ({ ...prev, roomId: String(fixedRoomId) }));
+    }
+  }, [fixedRoomId]);
+
+  useEffect(() => {
     if (contract) {
       setFormData({
         contractNumber: contract.contractNumber || '',
         tenantId: contract.tenantId || '',
-        roomId: contract.roomId || '',
+        roomId: contract.roomId || fixedRoomId || '',
         startDate: contract.startDate ? new Date(contract.startDate).toISOString().split('T')[0] : '',
         endDate: contract.endDate ? new Date(contract.endDate).toISOString().split('T')[0] : '',
         rentalPrice: contract.rentalPrice || '',
@@ -51,7 +66,7 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
       errors.tenantId = 'Vui lòng chọn khách thuê';
     }
 
-    if (!formData.roomId) {
+    if (!formData.roomId && !fixedRoomId) {
       errors.roomId = 'Vui lòng chọn phòng';
     }
 
@@ -130,6 +145,7 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
     if (validateForm()) {
       onSubmit({
         ...formData,
+        roomId: fixedRoomId ?? formData.roomId,
         contractFile,
       });
     }
@@ -208,6 +224,7 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
             </div>
 
             {/* Phòng */}
+            {fixedRoomId == null || fixedRoomId === '' ? (
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-2">
                 Phòng *
@@ -231,6 +248,16 @@ const ContractForm = ({ contract = null, tenants = [], rooms = [], onSubmit, onC
                 <p className="text-red-500 text-sm mt-1">{validationErrors.roomId}</p>
               )}
             </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">Phòng</label>
+                <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                  {rooms.find((r) => String(r.id) === String(fixedRoomId))?.roomNumber
+                    ? `Phòng ${rooms.find((r) => String(r.id) === String(fixedRoomId)).roomNumber}`
+                    : `Phòng #${fixedRoomId}`}
+                </p>
+              </div>
+            )}
 
             {/* Trạng thái */}
             <div>

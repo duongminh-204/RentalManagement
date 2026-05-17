@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, LogOut, User, Home, Building2, FileText, Car, Users } from 'lucide-react';
+import { Menu, X, LogOut, User, Home, Building2, Car, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Header = () => {
@@ -13,7 +13,6 @@ const Header = () => {
     { label: 'Dashboard', path: '/dashboard', icon: Home },
     { label: 'Phòng trọ', path: '/rooms', icon: Building2 },
     { label: 'Khách thuê', path: '/tenants', icon: Users },
-    { label: 'Hợp đồng', path: '/contracts', icon: FileText },
     { label: 'Phương tiện', path: '/vehicles', icon: Car },
   ];
 

@@ -1,3 +1,52 @@
+export const normalizeContractFromApi = (raw) => {
+  if (!raw) return null;
+  const id = raw.id ?? raw.contractId ?? raw.ContractId;
+  const isTerminated =
+    raw.isTerminated ?? raw.IsTerminated ?? raw.status === 'terminated';
+  const startDate = raw.startDate ?? raw.StartDate;
+  const endDate = raw.endDate ?? raw.EndDate;
+  const status =
+    raw.status ??
+    getContractStatus(startDate, endDate, isTerminated);
+
+  return {
+    id,
+    contractNumber: raw.contractNumber ?? raw.ContractNumber ?? '',
+    tenantId: raw.tenantId ?? raw.TenantId ?? null,
+    roomId: raw.roomId ?? raw.RoomId ?? null,
+    startDate,
+    endDate,
+    rentalPrice: Number(raw.rentalPrice ?? raw.RentalPrice) || 0,
+    terms: raw.terms ?? raw.Terms ?? '',
+    notes: raw.notes ?? raw.Notes ?? '',
+    status,
+    fileUrl: raw.fileUrl ?? raw.FileUrl ?? null,
+    isTerminated,
+  };
+};
+
+export const normalizeContractsList = (payload) => {
+  const list = Array.isArray(payload) ? payload : payload?.data ?? [];
+  return list.map(normalizeContractFromApi).filter(Boolean);
+};
+
+export const filterContractsByRoomId = (contracts, roomId) => {
+  if (!roomId) return [];
+  return contracts.filter((c) => String(c.roomId) === String(roomId));
+};
+
+export const getActiveContractForRoom = (contracts) => {
+  if (!contracts?.length) return null;
+  const priority = ['active', 'expiring_soon', 'pending'];
+  for (const key of priority) {
+    const found = contracts.find((c) => c.status === key);
+    if (found) return found;
+  }
+  return [...contracts].sort(
+    (a, b) => new Date(b.endDate || 0) - new Date(a.endDate || 0)
+  )[0];
+};
+
 // Get contract status label
 export const getContractStatusLabel = (status) => {
   const statusMap = {
