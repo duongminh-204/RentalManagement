@@ -1,3 +1,33 @@
+import { resolveMediaUrl } from '../../rooms/utils/roomHelpers';
+
+export const normalizeVehicleFromApi = (raw) => {
+  if (!raw) return null;
+  const id = raw.id ?? raw.vehicleId ?? raw.VehicleId;
+  return {
+    id,
+    licensePlate: raw.licensePlate ?? raw.licensePlateNumber ?? '',
+    type: raw.type ?? raw.vehicleType ?? 'motorcycle',
+    brand: raw.brand ?? '',
+    color: raw.color ?? '',
+    imageUrl: resolveMediaUrl(raw.imageUrl ?? raw.vehicleImage),
+    parkingFee: Number(raw.parkingFee ?? 0),
+    status: raw.status ?? (raw.tenantId == null && raw.userId == null ? 'unknown' : 'active'),
+    notes: raw.notes ?? '',
+    registrationDate: raw.registrationDate ?? raw.createdAt ?? null,
+    tenantId: raw.tenantId ?? raw.userId ?? null,
+    roomId: raw.roomId ?? null,
+    tenantName: raw.tenantName ?? null,
+    roomNumber: raw.roomNumber ?? null,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+  };
+};
+
+export const normalizeVehiclesList = (payload) => {
+  const list = Array.isArray(payload) ? payload : payload?.data ?? payload?.items ?? [];
+  return list.map(normalizeVehicleFromApi).filter(Boolean);
+};
+
 // Vehicle types
 export const VEHICLE_TYPES = {
   motorcycle: 'Xe máy',
