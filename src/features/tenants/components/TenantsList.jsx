@@ -1,264 +1,251 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Filter, Download, Loader } from 'lucide-react';
-import TenantCard from './TenantCard';
-import TenantForm from './TenantForm';
+import { useState, useMemo, useCallback } from 'react';
+import { Plus, Search, Loader2, Users } from 'lucide-react';
+import TenantListItem from './TenantListItem';
+import TenantManagementPanel from './TenantManagementPanel';
 import { useTenants } from '../hooks/useTenants';
 
 const TenantsList = () => {
-  const { tenants, loading, error, addTenant, editTenant, removeTenant, uploadIDCard } = useTenants();
+  const {
+    tenants,
+    loading,
+    error,
+    fetchTenants,
+    getTenant,
+    addTenant,
+    editTenant,
+    removeTenant,
+    uploadIDCard,
+  } = useTenants();
 
-  const [showForm, setShowForm] = useState(false);
-  const [editingTenant, setEditingTenant] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [formLoading, setFormLoading] = useState(false);
-  const [formError, setFormError] = useState(null);
+  const [panelMode, setPanelMode] = useState(null);
+  const [selectedTenant, setSelectedTenant] = useState(null);
+  const [panelLoading, setPanelLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
-  // Filter tenants
-  const filteredTenants = tenants.filter(tenant => {
-    const matchSearch = 
-      tenant.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tenant.phoneNumber?.includes(searchTerm) ||
-      tenant.cccd?.includes(searchTerm);
-    const matchStatus = statusFilter === 'all' || tenant.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const filteredTenants = useMemo(() => {
+    return tenants.filter((t) => {
+      const q = searchTerm.toLowerCase();
+      const matchSearch =
+        !q ||
+        t.fullName?.toLowerCase().includes(q) ||
+        t.phoneNumber?.includes(searchTerm) ||
+        t.cccd?.includes(searchTerm);
+      const matchStatus = statusFilter === 'all' || t.status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [tenants, searchTerm, statusFilter]);
 
-  const handleAddTenant = async (formData) => {
-    try {
-      setFormLoading(true);
-      setFormError(null);
-      
-      const { idCardImage, ...tenantData } = formData;
-      const newTenant = await addTenant(tenantData);
-      
-      // Upload ID card if provided
-      if (idCardImage) {
-        await uploadIDCard(newTenant.id, idCardImage);
+  const stats = useMemo(
+    () => ({
+      total: tenants.length,
+      active: tenants.filter((t) => t.status === 'active').length,
+      inactive: tenants.filter((t) => t.status === 'inactive').length,
+      movedOut: tenants.filter((t) => t.status === 'moved_out').length,
+    }),
+    [tenants]
+  );
+
+  const statCards = [
+    { label: 'Tổng khách', value: stats.total, accent: 'border-l-accent-violet' },
+    { label: 'Đang thuê', value: stats.active, accent: 'border-l-accent-lime' },
+    { label: 'Chưa thuê', value: stats.inactive, accent: 'border-l-hairline-cloud' },
+    { label: 'Đã trả phòng', value: stats.movedOut, accent: 'border-l-accent-pink' },
+  ];
+
+  const loadTenantDetail = useCallback(
+    async (tenantId, fallback) => {
+      setPanelLoading(true);
+      setSaveError(null);
+      try {
+        const detailed = await getTenant(tenantId);
+        setSelectedTenant(detailed || fallback);
+      } catch {
+        setSelectedTenant(fallback);
+      } finally {
+        setPanelLoading(false);
       }
-      
-      setShowForm(false);
-      setEditingTenant(null);
-    } catch (err) {
-      setFormError(err.response?.data?.message || 'Lỗi khi thêm khách thuê');
-    } finally {
-      setFormLoading(false);
-    }
+    },
+    [getTenant]
+  );
+
+  const handleSelectTenant = async (tenant) => {
+    setPanelMode('edit');
+    setSelectedTenant(tenant);
+    await loadTenantDetail(tenant.id, tenant);
   };
 
-  const handleEditTenant = async (formData) => {
-    try {
-      setFormLoading(true);
-      setFormError(null);
-      
-      const { idCardImage, ...tenantData } = formData;
-      await editTenant(editingTenant.id, tenantData);
-      
-      // Upload ID card if provided
-      if (idCardImage && typeof idCardImage !== 'string') {
-        await uploadIDCard(editingTenant.id, idCardImage);
-      }
-      
-      setShowForm(false);
-      setEditingTenant(null);
-    } catch (err) {
-      setFormError(err.response?.data?.message || 'Lỗi khi cập nhật khách thuê');
-    } finally {
-      setFormLoading(false);
-    }
+  const handleOpenCreate = () => {
+    setPanelMode('create');
+    setSelectedTenant(null);
+    setSaveError(null);
   };
 
-  const handleEdit = (tenant) => {
-    setEditingTenant(tenant);
-    setShowForm(true);
-    setFormError(null);
+  const handleClosePanel = () => {
+    setPanelMode(null);
+    setSelectedTenant(null);
+    setSaveError(null);
+  };
+
+  const handleSave = async (formData, idCardFile) => {
+    try {
+      setSaveLoading(true);
+      setSaveError(null);
+      if (panelMode === 'create') {
+        const created = await addTenant(formData);
+        if (idCardFile && created?.id) {
+          await uploadIDCard(created.id, idCardFile);
+        }
+        setPanelMode('edit');
+        await loadTenantDetail(created.id, created);
+      } else {
+        const updated = await editTenant(selectedTenant.id, formData);
+        if (idCardFile) {
+          await uploadIDCard(selectedTenant.id, idCardFile);
+        }
+        await loadTenantDetail(selectedTenant.id, updated);
+      }
+      await fetchTenants({ status: statusFilter !== 'all' ? statusFilter : undefined, search: searchTerm || undefined });
+    } catch (err) {
+      setSaveError(err.response?.data?.message || 'Lỗi khi lưu khách thuê');
+    } finally {
+      setSaveLoading(false);
+    }
   };
 
   const handleDelete = async (tenantId) => {
-    if (!window.confirm('Bạn có chắc muốn xóa khách thuê này?')) return;
+    if (!window.confirm('Bạn có chắc muốn xóa (vô hiệu hóa) khách thuê này?')) return;
     try {
       await removeTenant(tenantId);
+      if (String(selectedTenant?.id) === String(tenantId)) handleClosePanel();
+      await fetchTenants();
     } catch (err) {
-      setFormError(err.response?.data?.message || 'Lỗi khi xóa khách thuê');
+      setSaveError(err.response?.data?.message || 'Lỗi khi xóa khách thuê');
     }
   };
 
-  const handleViewDetails = (tenantId) => {
-    console.log('View details for tenant:', tenantId);
-    // TODO: Implement tenant details page
-  };
-
-  const handleExport = () => {
-    console.log('Exporting tenants data...');
-    // TODO: Implement CSV/Excel export
-  };
-
-  const stats = {
-    total: tenants.length,
-    active: tenants.filter(t => t.status === 'active').length,
-    inactive: tenants.filter(t => t.status === 'inactive').length,
-    movedOut: tenants.filter(t => t.status === 'moved_out').length,
-  };
-
-  const statCards = [
-    { label: 'Tổng khách thuê', value: stats.total, color: 'blue' },
-    { label: 'Đang thuê', value: stats.active, color: 'green' },
-    { label: 'Ngừng thuê', value: stats.inactive, color: 'amber' },
-    { label: 'Đã trả phòng', value: stats.movedOut, color: 'orange' },
-  ];
-
-  const getBgClass = (color) => {
-    const map = {
-      blue: 'bg-blue-50 border-blue-200',
-      green: 'bg-green-50 border-green-200',
-      amber: 'bg-amber-50 border-amber-200',
-      orange: 'bg-orange-50 border-orange-200',
-    };
-    return map[color] || 'bg-gray-50 border-gray-200';
-  };
-
-  const getTextClass = (color) => {
-    const map = {
-      blue: 'text-blue-700',
-      green: 'text-green-700',
-      amber: 'text-amber-700',
-      orange: 'text-orange-700',
-    };
-    return map[color] || 'text-gray-700';
+  const handleUploadIdCard = async (tenantId, file) => {
+    await uploadIDCard(tenantId, file);
+    await loadTenantDetail(tenantId, selectedTenant);
+    await fetchTenants();
   };
 
   if (loading && tenants.length === 0) {
     return (
-      <div className="min-h-screen bg-surface-light flex items-center justify-center">
-        <div className="text-center">
-          <Loader className="mx-auto text-accent-violet animate-spin mb-3" size={32} />
-          <p className="text-gray-600">Đang tải dữ liệu...</p>
-        </div>
+      <div className="flex min-h-screen flex-1 items-center justify-center bg-surface-light">
+        <Loader2 className="animate-spin text-accent-violet" size={36} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-surface-light w-full flex-1 font-sans">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Quản lý khách thuê</h1>
-              <p className="text-gray-600 mt-1">Quản lý thông tin và lịch sử khách thuê</p>
-            </div>
-            <button
-              onClick={() => {
-                setEditingTenant(null);
-                setShowForm(true);
-                setFormError(null);
-              }}
-              className="mt-4 sm:mt-0 inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition-colors font-medium"
-            >
-              <Plus size={20} /> Thêm khách thuê
-            </button>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {statCards.map((card, idx) => (
-              <div key={idx} className={`border rounded-lg p-4 ${getBgClass(card.color)}`}>
-                <p className="text-sm text-gray-600 mb-1">{card.label}</p>
-                <p className={`text-2xl font-bold ${getTextClass(card.color)}`}>{card.value}</p>
-              </div>
-            ))}
-          </div>
+    <div className="min-h-screen w-full flex-1 bg-surface-light font-sans">
+      <div className="page-content page-content--wide">
+        <div className="mb-6">
+          <p className="eyebrow text-accent-violet-mid">Quản lý</p>
+          <h1 className="font-display text-3xl font-semibold text-ink-deep">
+            Quản lý <span className="chip-lime text-ink-deep">khách thuê</span>
+          </h1>
+          <p className="mt-1 text-sm text-muted">
+            Lưu thông tin cá nhân, CCCD, phòng và lịch sử thuê trọ
+          </p>
         </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-3 text-gray-400" size={20} />
-              <input
-                type="text"
-                placeholder="Tìm theo tên, SĐT, CCCD..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet"
-              />
+        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {statCards.map((card) => (
+            <div
+              key={card.label}
+              className={`rounded-xl border border-hairline-cloud border-l-4 bg-surface-light px-4 py-3 shadow-sm ${card.accent}`}
+            >
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">{card.label}</p>
+              <p className="mt-1 font-display text-2xl font-semibold text-ink-deep">{card.value}</p>
             </div>
-
-            {/* Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet"
-            >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="active">Đang thuê</option>
-              <option value="inactive">Ngừng thuê</option>
-              <option value="moved_out">Đã trả phòng</option>
-            </select>
-
-            {/* Export */}
-            <button
-              onClick={handleExport}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-            >
-              <Download size={20} /> Xuất file
-            </button>
-          </div>
+          ))}
         </div>
 
-        {/* Tenants Grid */}
-        <AnimatePresence>
-          {filteredTenants.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTenants.map((tenant) => (
-                <motion.div
-                  key={tenant.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.2 }}
+        <div className="grid gap-5 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] xl:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]">
+          <div className="flex min-h-[560px] flex-col rounded-2xl border border-hairline-cloud bg-surface-light shadow-sm">
+            <div className="border-b border-hairline-cloud bg-ink-deep px-4 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-on-primary">Danh sách khách</p>
+                <button
+                  type="button"
+                  onClick={handleOpenCreate}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline-violet bg-ink-deep text-accent-lime transition hover:border-accent-lime hover:shadow-[0_0_12px_rgba(194,239,78,0.35)]"
+                  title="Thêm khách thuê"
                 >
-                  <TenantCard
-                    tenant={tenant}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onViewDetails={handleViewDetails}
+                  <Plus size={18} strokeWidth={2.5} />
+                </button>
+              </div>
+              <div className="mt-3 flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 text-on-dark-muted" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Tìm tên, SĐT, CCCD…"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full rounded-lg border border-hairline-violet bg-on-dark-faint py-2 pl-9 pr-3 text-sm text-on-primary placeholder:text-on-dark-muted focus:outline-none focus:ring-1 focus:ring-accent-lime"
                   />
-                </motion.div>
-              ))}
+                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="rounded-lg border border-hairline-violet bg-on-dark-faint px-2 py-2 text-xs text-on-primary"
+                  title="Lọc trạng thái"
+                >
+                  <option value="all">Tất cả</option>
+                  <option value="active">Đang thuê</option>
+                  <option value="inactive">Chưa thuê</option>
+                  <option value="moved_out">Đã trả</option>
+                </select>
+              </div>
             </div>
-          ) : (
-            <div className="text-center py-12 bg-white rounded-lg">
-              <p className="text-gray-500 text-lg">Không có khách thuê nào</p>
-              <p className="text-gray-400 mt-1">Bắt đầu bằng cách thêm khách thuê mới</p>
+
+            <div className="flex-1 space-y-2 overflow-y-auto p-3">
+              {filteredTenants.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <Users className="mb-3 text-accent-violet-mid" size={36} />
+                  <p className="text-sm text-muted">Không có khách thuê</p>
+                  <button type="button" onClick={handleOpenCreate} className="btn-primary mt-4 text-sm">
+                    <Plus size={16} /> Thêm khách
+                  </button>
+                </div>
+              ) : (
+                filteredTenants.map((tenant) => (
+                  <TenantListItem
+                    key={tenant.id}
+                    tenant={tenant}
+                    selected={String(selectedTenant?.id) === String(tenant.id)}
+                    onClick={handleSelectTenant}
+                  />
+                ))
+              )}
             </div>
-          )}
-        </AnimatePresence>
+          </div>
+
+          <TenantManagementPanel
+            tenant={panelMode === 'create' ? null : selectedTenant}
+            mode={panelMode === 'create' ? 'create' : 'edit'}
+            loading={panelLoading}
+            onClose={handleClosePanel}
+            onSave={panelMode ? handleSave : undefined}
+            onDelete={handleDelete}
+            onUploadIdCard={handleUploadIdCard}
+            onRefresh={() => selectedTenant && loadTenantDetail(selectedTenant.id, selectedTenant)}
+            saveLoading={saveLoading}
+            saveError={saveError}
+          />
+        </div>
 
         {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+          <div className="mt-4 rounded-lg border border-accent-pink/40 bg-accent-pink/10 px-4 py-3 text-sm text-ink-deep">
             {error}
           </div>
         )}
       </div>
-
-      {/* Form Modal */}
-      {showForm && (
-        <TenantForm
-          tenant={editingTenant}
-          onSubmit={editingTenant ? handleEditTenant : handleAddTenant}
-          onCancel={() => {
-            setShowForm(false);
-            setEditingTenant(null);
-            setFormError(null);
-          }}
-          loading={formLoading}
-          error={formError}
-        />
-      )}
     </div>
   );
 };

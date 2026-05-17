@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Filter, LayoutGrid, List } from 'lucide-react';
+import { Search, Filter, LayoutGrid, List } from 'lucide-react';
 import RoomTable from '../../../components/tables/RoomTable';
 import FloorPlanCanvas from './FloorPlanCanvas';
 import RoomStatusGuide from './RoomStatusGuide';
@@ -124,6 +124,15 @@ const RoomsList = () => {
     if (roomId) await loadRoomIntoPanel(roomId, normalizeRoomFromApi(room));
   };
 
+  const handleDeleteSelectedRoom = () => {
+    const roomId = managementRoom?.id ?? managementRoom?.roomId;
+    if (!roomId || panelMode !== 'edit') return;
+    handleDelete(roomId);
+  };
+
+  const selectedRoomId =
+    panelMode === 'edit' ? managementRoom?.id ?? managementRoom?.roomId : null;
+
   const handleRoomHover = (room) => {
     // Can be used to show preview or tooltip
     console.log('Hovering over room:', room.roomNumber);
@@ -160,20 +169,7 @@ const RoomsList = () => {
 
   return (
     <div className="min-h-screen w-full flex-1 bg-surface-light font-sans">
-      <div className="page-content">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row items-start sm:items-center justify-end mb-6 gap-4"
-        >
-          <div className="flex gap-3 w-full sm:w-auto">
-            <button onClick={handleOpenCreatePanel} className="btn-primary">
-              <Plus size={20} />
-              Thêm phòng
-            </button>
-          </div>
-        </motion.div>
+      <div className="page-content page-content--wide">
 
         {/* View Mode Selector */}
         <motion.div
@@ -214,12 +210,15 @@ const RoomsList = () => {
             className="space-y-4"
           >
             <RoomStatusGuide />
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-stretch">
-              <div className="min-h-[420px] overflow-hidden rounded-xl border border-hairline-cloud bg-surface-light p-2 lg:min-h-[520px]">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(440px,520px)] lg:items-stretch xl:gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(480px,560px)]">
+              <div className="min-h-[520px] overflow-hidden rounded-xl border border-hairline-cloud bg-surface-light p-3 lg:min-h-[600px] xl:min-h-[640px]">
                 <FloorPlanCanvas
                   rooms={rooms}
+                  selectedRoomId={selectedRoomId}
                   onRoomClick={handleRoomClick}
                   onRoomHover={handleRoomHover}
+                  onAddRoom={handleOpenCreatePanel}
+                  onDeleteRoom={handleDeleteSelectedRoom}
                 />
               </div>
               <RoomManagementPanel

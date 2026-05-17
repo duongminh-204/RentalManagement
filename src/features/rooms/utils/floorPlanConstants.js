@@ -25,6 +25,7 @@ export const ROOM_STATUS_STYLES = {
 
 export const FLOOR_PLAN_CANVAS_BG = '#ffffff';
 export const FLOOR_PLAN_HOVER_STROKE = '#6a5fc1';
+export const FLOOR_PLAN_SELECTED_STROKE = '#c2ef4e';
 
 export const getRoomStatusStyle = (status) => {
   if (status === 'occupied') return ROOM_STATUS_STYLES.occupied;

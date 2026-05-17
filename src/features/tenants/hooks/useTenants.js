@@ -1,26 +1,22 @@
 import { useState, useCallback, useEffect } from 'react';
+import * as tenantsApi from '../api/tenantsApi';
 import {
-  getTenants,
-  getTenantById,
-  createTenant,
-  updateTenant,
-  deleteTenant,
-  uploadIdCardImage,
-  getTenantHistory,
-} from '../api/tenantsApi';
+  normalizeTenantFromApi,
+  normalizeTenantsList,
+  resolveMediaUrl,
+} from '../utils/tenantHelpers';
 
 export const useTenants = () => {
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch all tenants
   const fetchTenants = useCallback(async (params = {}) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getTenants(params);
-      setTenants(data);
+      const data = await tenantsApi.getTenants(params);
+      setTenants(normalizeTenantsList(data));
     } catch (err) {
       setError(err.response?.data?.message || 'Lỗi khi tải dữ liệu khách thuê');
       console.error('Error fetching tenants:', err);
@@ -29,86 +25,46 @@ export const useTenants = () => {
     }
   }, []);
 
-  // Get single tenant
   const getTenant = useCallback(async (id) => {
-    try {
-      setError(null);
-      const data = await getTenantById(id);
-      return data;
-    } catch (err) {
-      setError(err.response?.data?.message || 'Lỗi khi tải chi tiết khách thuê');
-      throw err;
-    }
+    const data = await tenantsApi.getTenantById(id);
+    return normalizeTenantFromApi(data?.data ?? data);
   }, []);
 
-  // Add new tenant
   const addTenant = useCallback(async (tenantData) => {
-    try {
-      setError(null);
-      const data = await createTenant(tenantData);
-      setTenants((prevTenants) => [...prevTenants, data]);
-      return data;
-    } catch (err) {
-      setError(err.response?.data?.message || 'Lỗi khi thêm khách thuê');
-      throw err;
-    }
+    const data = await tenantsApi.createTenant(tenantData);
+    const normalized = normalizeTenantFromApi(data?.data ?? data);
+    setTenants((prev) => [...prev, normalized]);
+    return normalized;
   }, []);
 
-  // Edit tenant
   const editTenant = useCallback(async (id, tenantData) => {
-    try {
-      setError(null);
-      const data = await updateTenant(id, tenantData);
-      setTenants((prevTenants) =>
-        prevTenants.map((t) => (t.id === id ? data : t))
-      );
-      return data;
-    } catch (err) {
-      setError(err.response?.data?.message || 'Lỗi khi cập nhật khách thuê');
-      throw err;
-    }
+    const data = await tenantsApi.updateTenant(id, tenantData);
+    const normalized = normalizeTenantFromApi(data?.data ?? data);
+    setTenants((prev) => prev.map((t) => (String(t.id) === String(id) ? normalized : t)));
+    return normalized;
   }, []);
 
-  // Remove tenant
   const removeTenant = useCallback(async (id) => {
-    try {
-      setError(null);
-      await deleteTenant(id);
-      setTenants((prevTenants) => prevTenants.filter((t) => t.id !== id));
-    } catch (err) {
-      setError(err.response?.data?.message || 'Lỗi khi xóa khách thuê');
-      throw err;
-    }
+    await tenantsApi.deleteTenant(id);
+    setTenants((prev) => prev.filter((t) => String(t.id) !== String(id)));
   }, []);
 
-  // Upload ID card
   const uploadIDCard = useCallback(async (tenantId, file) => {
-    try {
-      setError(null);
-      const data = await uploadIdCardImage(tenantId, file);
-      setTenants((prevTenants) =>
-        prevTenants.map((t) => (t.id === tenantId ? { ...t, idCardImage: data.idCardImage } : t))
-      );
-      return data;
-    } catch (err) {
-      setError(err.response?.data?.message || 'Lỗi khi upload ảnh CCCD');
-      throw err;
-    }
+    const data = await tenantsApi.uploadIdCardImage(tenantId, file);
+    const raw = data?.idCardImage ?? data?.IdCardImage ?? data;
+    const imageUrl = resolveMediaUrl(raw);
+    setTenants((prev) =>
+      prev.map((t) => (String(t.id) === String(tenantId) ? { ...t, idCardImage: imageUrl } : t))
+    );
+    return data;
   }, []);
 
-  // Get tenant history
   const fetchTenantHistory = useCallback(async (tenantId) => {
-    try {
-      setError(null);
-      const data = await getTenantHistory(tenantId);
-      return data;
-    } catch (err) {
-      setError(err.response?.data?.message || 'Lỗi khi tải lịch sử khách thuê');
-      throw err;
-    }
+    const data = await tenantsApi.getTenantHistory(tenantId);
+    const list = Array.isArray(data) ? data : data?.data ?? [];
+    return list;
   }, []);
 
-  // Load tenants on mount
   useEffect(() => {
     fetchTenants();
   }, [fetchTenants]);
