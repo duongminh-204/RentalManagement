@@ -2,7 +2,15 @@ import { useState, useMemo, useCallback } from 'react';
 import { Plus, Search, Loader2, Users } from 'lucide-react';
 import TenantListItem from './TenantListItem';
 import TenantManagementPanel from './TenantManagementPanel';
+import FilterSelect from '../../../components/common/FilterSelect';
 import { useTenants } from '../hooks/useTenants';
+
+const TENANT_STATUS_OPTIONS = [
+  { value: 'all', label: 'Tất cả trạng thái' },
+  { value: 'active', label: 'Đang thuê' },
+  { value: 'inactive', label: 'Chưa thuê' },
+  { value: 'moved_out', label: 'Đã trả phòng' },
+];
 
 const TenantsList = () => {
   const {
@@ -183,17 +191,13 @@ const TenantsList = () => {
                     className="w-full rounded-lg border border-hairline-violet bg-on-dark-faint py-2 pl-9 pr-3 text-sm text-on-primary placeholder:text-on-dark-muted focus:outline-none focus:ring-1 focus:ring-accent-lime"
                   />
                 </div>
-                <select
+                <FilterSelect
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="rounded-lg border border-hairline-violet bg-on-dark-faint px-2 py-2 text-xs text-on-primary"
+                  options={TENANT_STATUS_OPTIONS}
+                  className="w-[148px] shrink-0"
                   title="Lọc trạng thái"
-                >
-                  <option value="all">Tất cả</option>
-                  <option value="active">Đang thuê</option>
-                  <option value="inactive">Chưa thuê</option>
-                  <option value="moved_out">Đã trả</option>
-                </select>
+                />
               </div>
             </div>
 

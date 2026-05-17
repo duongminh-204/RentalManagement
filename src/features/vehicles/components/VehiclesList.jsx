@@ -10,7 +10,24 @@ import {
 } from 'lucide-react';
 import VehicleListItem from './VehicleListItem';
 import VehicleManagementPanel from './VehicleManagementPanel';
+import FilterSelect from '../../../components/common/FilterSelect';
 import { useVehicles } from '../hooks/useVehicles';
+
+const VEHICLE_STATUS_OPTIONS = [
+  { value: 'all', label: 'Mọi trạng thái' },
+  { value: 'active', label: 'Đang gửi' },
+  { value: 'inactive', label: 'Ngừng gửi' },
+  { value: 'unknown', label: 'Xe lạ' },
+];
+
+const VEHICLE_TYPE_OPTIONS = [
+  { value: 'all', label: 'Mọi loại xe' },
+  { value: 'motorcycle', label: 'Xe máy' },
+  { value: 'scooter', label: 'Xe tay ga' },
+  { value: 'bicycle', label: 'Xe đạp' },
+  { value: 'car', label: 'Ô tô' },
+  { value: 'other', label: 'Khác' },
+];
 import { useTenants } from '../../tenants';
 import { useRooms } from '../../rooms';
 import { formatCurrency } from '../utils/vehicleHelpers';
@@ -266,29 +283,19 @@ const VehiclesList = () => {
                     className="w-full rounded-lg border border-hairline-violet bg-on-dark-faint py-2 pl-9 pr-3 text-sm text-on-primary placeholder:text-on-dark-muted focus:outline-none focus:ring-1 focus:ring-accent-lime"
                   />
                 </div>
-                <div className="flex gap-2">
-                  <select
+                <div className="grid grid-cols-2 gap-2">
+                  <FilterSelect
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="flex-1 rounded-lg border border-hairline-violet bg-on-dark-faint px-2 py-2 text-xs text-on-primary"
-                  >
-                    <option value="all">Mọi trạng thái</option>
-                    <option value="active">Đang gửi</option>
-                    <option value="inactive">Ngừng gửi</option>
-                    <option value="unknown">Xe lạ</option>
-                  </select>
-                  <select
+                    options={VEHICLE_STATUS_OPTIONS}
+                    title="Lọc trạng thái"
+                  />
+                  <FilterSelect
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value)}
-                    className="flex-1 rounded-lg border border-hairline-violet bg-on-dark-faint px-2 py-2 text-xs text-on-primary"
-                  >
-                    <option value="all">Mọi loại</option>
-                    <option value="motorcycle">Xe máy</option>
-                    <option value="scooter">Xe tay ga</option>
-                    <option value="bicycle">Xe đạp</option>
-                    <option value="car">Ô tô</option>
-                    <option value="other">Khác</option>
-                  </select>
+                    options={VEHICLE_TYPE_OPTIONS}
+                    title="Lọc loại xe"
+                  />
                 </div>
               </div>
             </div>
