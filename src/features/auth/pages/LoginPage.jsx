@@ -7,7 +7,7 @@ export default function LoginPage() {
             <div className="relative z-10 grid w-full max-w-5xl items-center gap-10 md:grid-cols-2">
                 <AuthIllustration
                     title="Quản lý nhà trọ"
-                    highlight="thông minh"
+                    highlight="Quản lý nhà trọ"
                     icon="🏠"
                 />
                 <LoginForm />

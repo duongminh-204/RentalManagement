@@ -7,7 +7,7 @@ export default function RegisterPage() {
             <div className="relative z-10 grid w-full max-w-5xl items-center gap-10 md:grid-cols-2">
                 <AuthIllustration
                     title="Bắt đầu quản lý"
-                    highlight="ngay"
+                    highlight="Quản lý nhà trọ"
                     icon="📋"
                 />
                 <RegisterForm />
