@@ -75,6 +75,8 @@ const TenantManagementPanel = ({
   const [uploading, setUploading] = useState(false);
   const [localError, setLocalError] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
 
   const isCreate = mode === 'create';
   const tenantId = tenant?.id;
@@ -180,6 +182,18 @@ const TenantManagementPanel = ({
       setUploading(false);
     }
   };
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setLocalError('Ảnh avatar tối đa 5MB');
+      return;
+    }
+
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+    setLocalError(null);
+  };
 
   if (!tenant && !isCreate) {
     return (
@@ -197,25 +211,52 @@ const TenantManagementPanel = ({
 
   return (
     <aside className="flex h-full max-h-[calc(100vh-10rem)] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-hairline-cloud bg-surface-light shadow-[var(--shadow-card)] lg:min-h-[600px]">
+      {/* Header với Avatar */}
       <div className="border-b border-hairline-cloud bg-ink-deep px-5 py-4 text-on-primary">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="eyebrow text-on-dark-muted">Quản lý khách thuê</p>
-            <h2 className="font-display text-xl font-semibold">
-              {isCreate ? (
-                'Thêm khách mới'
-              ) : (
-                <span className="chip-lime text-ink-deep">{tenant.fullName}</span>
+          <div className="flex items-center gap-4">
+            <div className="relative flex-shrink-0">
+              <img
+                src={
+                  avatarPreview ||
+                  tenant?.avatar ||
+                  (tenant?.fullName ? `https://ui-avatars.com/api/?name=${encodeURIComponent(tenant.fullName)}&background=6B46C1&color=fff&size=128` : null)
+                }
+                alt={tenant?.fullName || 'Avatar'}
+                className="h-16 w-16 rounded-2xl object-cover border border-hairline-cloud shadow-md"
+                onError={(e) => {
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(tenant?.fullName || 'U')}&background=6B46C1&color=fff`;
+                }}
+              />
+
+              {!isCreate && tenantId && (
+                <label className="absolute -bottom-1 -right-1 cursor-pointer rounded-full bg-surface-press p-1.5 shadow-lg hover:bg-accent-violet transition">
+                  <Upload size={16} />   {/* Đổi từ Camera sang Upload cho nhất quán */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                </label>
               )}
-            </h2>
-            {tenant && !isCreate && (
-              <span
-                className={`mt-2 inline-block rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase ${getTenantStatusBadgeClass(tenant.status)}`}
-              >
-                {getTenantStatusLabel(tenant.status)}
-              </span>
-            )}
+            </div>
+
+            {/* Phần còn lại giữ nguyên */}
+            <div>
+              <p className="eyebrow text-on-dark-muted">Quản lý khách thuê</p>
+              <h2 className="font-display text-xl font-semibold">
+                {isCreate ? 'Thêm khách mới' : tenant.fullName}
+              </h2>
+              {tenant && !isCreate && (
+                <span className={`mt-2 inline-block rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase ${getTenantStatusBadgeClass(tenant.status)}`}>
+                  {getTenantStatusLabel(tenant.status)}
+                </span>
+              )}
+            </div>
           </div>
+
+          {/* Nút xóa và đóng giữ nguyên */}
           <div className="flex gap-1">
             {!isCreate && tenantId && (
               <button
@@ -247,13 +288,12 @@ const TenantManagementPanel = ({
               type="button"
               disabled={disabled}
               onClick={() => !disabled && setActiveTab(id)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition ${
-                activeTab === id
-                  ? 'bg-primary text-on-primary'
-                  : disabled
-                    ? 'cursor-not-allowed opacity-50 text-muted'
-                    : 'text-ink-deep hover:bg-surface-press'
-              }`}
+              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition ${activeTab === id
+                ? 'bg-primary text-on-primary'
+                : disabled
+                  ? 'cursor-not-allowed opacity-50 text-muted'
+                  : 'text-ink-deep hover:bg-surface-press'
+                }`}
             >
               <Icon size={14} />
               {label}

@@ -19,7 +19,7 @@ export const normalizeTenantFromApi = (raw) => {
     email: raw.email ?? raw.Email ?? '',
     cccd: raw.cccd ?? raw.Cccd ?? raw.CCCD ?? '',
     idCardImage: resolveMediaUrl(raw.idCardImage ?? raw.IdCardImage ?? raw.cccdImage),
-    avatar: resolveMediaUrl(raw.avatar ?? raw.Avatar),
+    avatar: resolveAvatarUrl(raw.avatar ?? raw.Avatar),
     address: raw.address ?? raw.Address ?? '',
     isActive: raw.isActive ?? raw.IsActive ?? true,
     status: raw.status ?? 'inactive',
@@ -143,4 +143,15 @@ export const toInputDate = (date) => {
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return '';
   return d.toISOString().slice(0, 10);
+};
+
+export const resolveAvatarUrl = (url) => {
+  return resolveMediaUrl(url); 
+};
+
+
+export const getDefaultAvatar = (fullName = '') => {
+  if (!fullName) return null;
+  const initial = fullName.trim().charAt(0).toUpperCase();
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(initial)}&background=6B46C1&color=fff&size=128`;
 };

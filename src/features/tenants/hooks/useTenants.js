@@ -49,13 +49,27 @@ export const useTenants = () => {
     setTenants((prev) => prev.filter((t) => String(t.id) !== String(id)));
   }, []);
 
+  // ==================== UPLOAD CCCD ====================
   const uploadIDCard = useCallback(async (tenantId, file) => {
     const data = await tenantsApi.uploadIdCardImage(tenantId, file);
     const raw = data?.idCardImage ?? data?.IdCardImage ?? data;
     const imageUrl = resolveMediaUrl(raw);
+
     setTenants((prev) =>
       prev.map((t) => (String(t.id) === String(tenantId) ? { ...t, idCardImage: imageUrl } : t))
     );
+    return data;
+  }, []);
+
+  // ==================== UPLOAD AVATAR ====================
+  const uploadAvatar = useCallback(async (tenantId, file) => {
+    const data = await tenantsApi.uploadAvatarImage(tenantId, file);
+    const raw = data?.avatar ?? data?.Avatar ?? data?.imageUrl ?? data;
+    const imageUrl = resolveMediaUrl(raw);
+    setTenants((prev) =>
+      prev.map((t) => (String(t.id) === String(tenantId) ? { ...t, avatar: imageUrl } : t))
+    );
+
     return data;
   }, []);
 
@@ -79,6 +93,7 @@ export const useTenants = () => {
     editTenant,
     removeTenant,
     uploadIDCard,
+    uploadAvatar,         
     fetchTenantHistory,
   };
 };

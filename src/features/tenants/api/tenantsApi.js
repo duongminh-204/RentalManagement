@@ -87,3 +87,17 @@ export const searchTenants = async (query) => {
     throw error;
   }
 };
+
+export const uploadAvatarImage = async (tenantId, file) => {
+  const formData = new FormData();
+  formData.append('file', file);       
+
+  const response = await axios.post(
+    `/api/tenants/${tenantId}/avatar`,
+    formData,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }
+  );
+  return response.data;
+};
