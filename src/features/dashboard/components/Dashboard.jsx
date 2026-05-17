@@ -41,10 +41,10 @@ const Dashboard = () => {
           transition={{ duration: 0.4 }}
           className="mb-10"
         >
-          <p className="eyebrow mb-2">Tổng quan</p>
+          {/* <p className="eyebrow mb-2">Tổng quan</p>
           <h1 className="font-display text-3xl font-medium text-ink-deep">
             Bảng điều khiển <span className="chip-lime">hôm nay</span>
-          </h1>
+          </h1> */}
         </motion.div>
 
         {error && (

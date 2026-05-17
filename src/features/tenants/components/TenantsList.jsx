@@ -48,12 +48,12 @@ const TenantsList = () => {
     [tenants]
   );
 
-  const statCards = [
-    { label: 'Tổng khách', value: stats.total, accent: 'border-l-accent-violet' },
-    { label: 'Đang thuê', value: stats.active, accent: 'border-l-accent-lime' },
-    { label: 'Chưa thuê', value: stats.inactive, accent: 'border-l-hairline-cloud' },
-    { label: 'Đã trả phòng', value: stats.movedOut, accent: 'border-l-accent-pink' },
-  ];
+  // const statCards = [
+  //   { label: 'Tổng khách', value: stats.total, accent: 'border-l-accent-violet' },
+  //   { label: 'Đang thuê', value: stats.active, accent: 'border-l-accent-lime' },
+  //   { label: 'Chưa thuê', value: stats.inactive, accent: 'border-l-hairline-cloud' },
+  //   { label: 'Đã trả phòng', value: stats.movedOut, accent: 'border-l-accent-pink' },
+  // ];
 
   const loadTenantDetail = useCallback(
     async (tenantId, fallback) => {
@@ -144,16 +144,9 @@ const TenantsList = () => {
     <div className="min-h-screen w-full flex-1 bg-surface-light font-sans">
       <div className="page-content page-content--wide">
         <div className="mb-6">
-          <p className="eyebrow text-accent-violet-mid">Quản lý</p>
-          <h1 className="font-display text-3xl font-semibold text-ink-deep">
-            Quản lý <span className="chip-lime text-ink-deep">khách thuê</span>
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            Lưu thông tin cá nhân, CCCD, phòng và lịch sử thuê trọ
-          </p>
         </div>
 
-        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+        {/* <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
           {statCards.map((card) => (
             <div
               key={card.label}
@@ -163,7 +156,7 @@ const TenantsList = () => {
               <p className="mt-1 font-display text-2xl font-semibold text-ink-deep">{card.value}</p>
             </div>
           ))}
-        </div>
+        </div> */}
 
         <div className="grid gap-5 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] xl:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]">
           <div className="flex min-h-[560px] flex-col rounded-2xl border border-hairline-cloud bg-surface-light shadow-sm">
