@@ -50,17 +50,18 @@ export const getVehicleStatusLabel = (status) => {
   return VEHICLE_STATUS[status] || status;
 };
 
-// Get vehicle status color
-export const getVehicleStatusColor = (status) => {
-  const colorMap = {
-    active: 'bg-green-100 text-green-800',
-    inactive: 'bg-gray-100 text-gray-800',
-    unknown: 'bg-red-100 text-red-800',
-    parked: 'bg-blue-100 text-blue-800',
-    removed: 'bg-slate-100 text-slate-800',
+export const getVehicleStatusBadgeClass = (status) => {
+  const map = {
+    active: 'bg-accent-lime/20 text-ink-deep border-accent-lime/40',
+    inactive: 'bg-surface-press text-muted border-hairline-cloud',
+    unknown: 'bg-accent-pink/15 text-ink-deep border-accent-pink/40',
+    parked: 'bg-accent-violet/15 text-ink-deep border-accent-violet/40',
+    removed: 'bg-surface-press text-muted border-hairline-cloud',
   };
-  return colorMap[status] || 'bg-gray-100 text-gray-800';
+  return map[status] || 'bg-surface-press text-muted border-hairline-cloud';
 };
+
+export const getVehicleStatusColor = getVehicleStatusBadgeClass;
 
 
 export const formatLicensePlate = (plate) => {

@@ -1,322 +1,343 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, AlertTriangle, Loader, TrendingUp } from 'lucide-react';
-import VehicleCard from './VehicleCard';
-import VehicleForm from './VehicleForm';
+import { useState, useMemo, useCallback } from 'react';
+import {
+  Plus,
+  Search,
+  Loader2,
+  Car,
+  AlertTriangle,
+  Banknote,
+  ShieldCheck,
+} from 'lucide-react';
+import VehicleListItem from './VehicleListItem';
+import VehicleManagementPanel from './VehicleManagementPanel';
 import { useVehicles } from '../hooks/useVehicles';
-import { VEHICLE_TYPES } from '../utils/vehicleHelpers';
+import { useTenants } from '../../tenants';
+import { useRooms } from '../../rooms';
+import { formatCurrency } from '../utils/vehicleHelpers';
 
-const VehiclesList = ({ tenants = [], rooms = [] }) => {
-  const { vehicles, unknownVehicles, parkingFeeSummary, loading, error, addVehicle, editVehicle, removeVehicle, uploadImage } =
-    useVehicles();
+const VehiclesList = () => {
+  const { tenants } = useTenants();
+  const { rooms } = useRooms();
+  const {
+    vehicles,
+    unknownVehicles,
+    parkingFeeSummary,
+    loading,
+    error,
+    fetchVehicles,
+    getVehicle,
+    addVehicle,
+    editVehicle,
+    removeVehicle,
+    uploadImage,
+    fetchUnknownVehicles,
+    fetchParkingFeeSummary,
+  } = useVehicles();
 
-  const [showForm, setShowForm] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [formLoading, setFormLoading] = useState(false);
-  const [formError, setFormError] = useState(null);
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [panelMode, setPanelMode] = useState(null);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [panelLoading, setPanelLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
-  // Filter vehicles
-  const filteredVehicles = vehicles.filter((vehicle) => {
-    const tenant = tenants.find((t) => t.id === vehicle.tenantId);
-    const matchSearch =
-      vehicle.licensePlate?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tenant?.fullName?.toLowerCase().includes(searchTerm.toLowerCase());
+  const tenantById = useMemo(() => {
+    const map = {};
+    tenants.forEach((t) => {
+      map[t.id] = t;
+    });
+    return map;
+  }, [tenants]);
 
-    const matchType = typeFilter === 'all' || vehicle.type === typeFilter;
-    const matchStatus = statusFilter === 'all' || vehicle.status === statusFilter;
+  const roomById = useMemo(() => {
+    const map = {};
+    rooms.forEach((r) => {
+      map[r.id] = r;
+    });
+    return map;
+  }, [rooms]);
 
-    return matchSearch && matchType && matchStatus;
-  });
+  const filteredVehicles = useMemo(() => {
+    const q = searchTerm.toLowerCase().trim();
+    return vehicles.filter((v) => {
+      const tenant = tenantById[v.tenantId];
+      const matchSearch =
+        !q ||
+        v.licensePlate?.toLowerCase().includes(q) ||
+        v.brand?.toLowerCase().includes(q) ||
+        tenant?.fullName?.toLowerCase().includes(q);
+      const matchStatus = statusFilter === 'all' || v.status === statusFilter;
+      const matchType = typeFilter === 'all' || v.type === typeFilter;
+      return matchSearch && matchStatus && matchType;
+    });
+  }, [vehicles, searchTerm, statusFilter, typeFilter, tenantById]);
 
-  const handleAddVehicle = async (formData) => {
-    try {
-      setFormLoading(true);
-      setFormError(null);
+  const stats = useMemo(
+    () => ({
+      total: vehicles.length,
+      active: vehicles.filter((v) => v.status === 'active').length,
+      inactive: vehicles.filter((v) => v.status === 'inactive').length,
+      unknown: unknownVehicles.length,
+    }),
+    [vehicles, unknownVehicles]
+  );
 
-      const { vehicleImage, ...vehicleData } = formData;
-      const newVehicle = await addVehicle(vehicleData);
+  // const statCards = [
+  //   { label: 'Tổng xe', value: stats.total, accent: 'border-l-accent-violet' },
+  //   { label: 'Đang gửi', value: stats.active, accent: 'border-l-accent-lime' },
+  //   { label: 'Ngừng gửi', value: stats.inactive, accent: 'border-l-hairline-cloud' },
+  //   { label: 'Xe lạ', value: stats.unknown, accent: 'border-l-accent-pink', highlight: stats.unknown > 0 },
+  // ];
 
-      // Upload image if provided
-      if (vehicleImage) {
-        await uploadImage(newVehicle.id, vehicleImage);
+  const loadVehicleDetail = useCallback(
+    async (vehicleId, fallback) => {
+      setPanelLoading(true);
+      setSaveError(null);
+      try {
+        const detailed = await getVehicle(vehicleId);
+        setSelectedVehicle(detailed || fallback);
+      } catch {
+        setSelectedVehicle(fallback);
+      } finally {
+        setPanelLoading(false);
       }
+    },
+    [getVehicle]
+  );
 
-      setShowForm(false);
-      setEditingVehicle(null);
-    } catch (err) {
-      setFormError(err.response?.data?.message || 'Lỗi khi thêm xe');
-    } finally {
-      setFormLoading(false);
-    }
+  const refreshMeta = async () => {
+    await Promise.all([fetchVehicles(), fetchUnknownVehicles(), fetchParkingFeeSummary()]);
   };
 
-  const handleEditVehicle = async (formData) => {
-    try {
-      setFormLoading(true);
-      setFormError(null);
-
-      const { vehicleImage, ...vehicleData } = formData;
-      await editVehicle(editingVehicle.id, vehicleData);
-
-      // Upload image if provided and it's a new file
-      if (vehicleImage && typeof vehicleImage !== 'string') {
-        await uploadImage(editingVehicle.id, vehicleImage);
-      }
-
-      setShowForm(false);
-      setEditingVehicle(null);
-    } catch (err) {
-      setFormError(err.response?.data?.message || 'Lỗi khi cập nhật xe');
-    } finally {
-      setFormLoading(false);
-    }
+  const handleSelectVehicle = async (vehicle) => {
+    setPanelMode('edit');
+    setSelectedVehicle(vehicle);
+    await loadVehicleDetail(vehicle.id, vehicle);
   };
 
-  const handleEdit = (vehicle) => {
-    setEditingVehicle(vehicle);
-    setShowForm(true);
-    setFormError(null);
+  const handleOpenCreate = () => {
+    setPanelMode('create');
+    setSelectedVehicle(null);
+    setSaveError(null);
+  };
+
+  const handleClosePanel = () => {
+    setPanelMode(null);
+    setSelectedVehicle(null);
+    setSaveError(null);
+  };
+
+  const handleSave = async (formData, imageFile) => {
+    try {
+      setSaveLoading(true);
+      setSaveError(null);
+      if (panelMode === 'create') {
+        const created = await addVehicle(formData);
+        if (imageFile && created?.id) {
+          await uploadImage(created.id, imageFile);
+        }
+        setPanelMode('edit');
+        await loadVehicleDetail(created.id, created);
+      } else {
+        const updated = await editVehicle(selectedVehicle.id, formData);
+        if (imageFile) {
+          await uploadImage(selectedVehicle.id, imageFile);
+        }
+        await loadVehicleDetail(selectedVehicle.id, updated);
+      }
+      await refreshMeta();
+    } catch (err) {
+      setSaveError(err.response?.data?.message || 'Lỗi khi lưu thông tin xe');
+    } finally {
+      setSaveLoading(false);
+    }
   };
 
   const handleDelete = async (vehicleId) => {
     if (!window.confirm('Bạn có chắc muốn xóa xe này?')) return;
     try {
       await removeVehicle(vehicleId);
+      if (String(selectedVehicle?.id) === String(vehicleId)) handleClosePanel();
+      await refreshMeta();
     } catch (err) {
-      setFormError(err.response?.data?.message || 'Lỗi khi xóa xe');
+      setSaveError(err.response?.data?.message || 'Lỗi khi xóa xe');
     }
   };
 
-  const stats = {
-    total: vehicles.length,
-    active: vehicles.filter((v) => v.status === 'active').length,
-    inactive: vehicles.filter((v) => v.status === 'inactive').length,
-    unknown: unknownVehicles.length,
-  };
-
-  const statCards = [
-    { label: 'Tổng xe', value: stats.total, color: 'blue', icon: '🚗' },
-    { label: 'Đang gửi', value: stats.active, color: 'green', icon: '✓' },
-    { label: 'Ngừng gửi', value: stats.inactive, color: 'gray', icon: '·' },
-    { label: 'Xe lạ', value: stats.unknown, color: 'red', icon: '⚠', highlight: true },
-  ];
-
-  const getBgClass = (color) => {
-    const map = {
-      blue: 'bg-blue-50 border-blue-200',
-      green: 'bg-green-50 border-green-200',
-      gray: 'bg-gray-50 border-gray-200',
-      red: 'bg-red-50 border-red-200',
-    };
-    return map[color] || 'bg-gray-50 border-gray-200';
-  };
-
-  const getTextClass = (color) => {
-    const map = {
-      blue: 'text-blue-700',
-      green: 'text-green-700',
-      gray: 'text-gray-700',
-      red: 'text-red-700',
-    };
-    return map[color] || 'text-gray-700';
+  const handleUploadImage = async (vehicleId, file) => {
+    await uploadImage(vehicleId, file);
+    await loadVehicleDetail(vehicleId, selectedVehicle);
+    await refreshMeta();
   };
 
   if (loading && vehicles.length === 0) {
     return (
-      <div className="min-h-screen bg-surface-light flex items-center justify-center">
-        <div className="text-center">
-          <Loader className="mx-auto text-accent-violet animate-spin mb-3" size={32} />
-          <p className="text-gray-600">Đang tải dữ liệu...</p>
-        </div>
+      <div className="flex min-h-screen flex-1 items-center justify-center bg-surface-light">
+        <Loader2 className="animate-spin text-accent-violet" size={36} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-surface-light w-full flex-1 font-sans">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Quản lý xe người thuê</h1>
-              <p className="text-gray-600 mt-1">Theo dõi xe, phí gửi, và phát hiện xe lạ</p>
-            </div>
-            <button
-              onClick={() => {
-                setEditingVehicle(null);
-                setShowForm(true);
-                setFormError(null);
-              }}
-              className="mt-4 sm:mt-0 inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition-colors font-medium"
-            >
-              <Plus size={20} /> Thêm xe
-            </button>
-          </div>
+    <div className="min-h-screen w-full flex-1 bg-surface-light font-sans">
+      <div className="page-content page-content--wide">
+        <div className="mb-6">
+          {/* <p className="eyebrow">An ninh & phí gửi xe</p>
+          <h1 className="font-display text-2xl font-semibold text-ink-deep sm:text-3xl">
+            Quản lý xe người thuê
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted">
+            Lưu biển số, loại xe, ảnh và phí gửi — liên kết phòng & khách để kiểm soát xe lạ và tra cứu nhanh.
+          </p> */}
+        </div>
 
-          {/* Alert for unknown vehicles */}
-          {stats.unknown > 0 && (
-            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-              <AlertTriangle className="text-red-600 mt-0.5" size={24} />
+        {/* <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {statCards.map((card) => (
+            <div
+              key={card.label}
+              className={`rounded-xl border border-hairline-cloud border-l-4 bg-surface-light px-4 py-3 shadow-sm ${card.accent} ${
+                card.highlight ? 'ring-1 ring-accent-pink/40' : ''
+              }`}
+            >
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">{card.label}</p>
+              <p className="mt-1 font-display text-2xl font-semibold text-ink-deep">{card.value}</p>
+            </div>
+          ))}
+        </div> */}
+
+        {stats.unknown > 0 && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-accent-pink/40 bg-accent-pink/10 px-4 py-3">
+            <AlertTriangle className="mt-0.5 shrink-0 text-accent-pink" size={22} />
+            <div>
+              <p className="font-semibold text-ink-deep">
+                {stats.unknown} xe lạ chưa xác nhận
+              </p>
+              <p className="mt-0.5 text-sm text-muted">
+                Gán khách thuê và phòng để tăng cường an ninh khu trọ.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {parkingFeeSummary && (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-hairline-cloud bg-ink-deep px-5 py-4 text-on-primary">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-on-dark-faint">
+                <Banknote size={22} className="text-accent-lime" />
+              </div>
               <div>
-                <p className="font-semibold text-red-900">{stats.unknown} xe lạ chưa xác nhận</p>
-                <p className="text-sm text-red-800 mt-1">
-                  Hãy kiểm tra và cập nhật thông tin khách thuê cho những xe này
+                <p className="text-xs uppercase tracking-wide text-on-dark-muted">Tổng phí gửi xe / tháng</p>
+                <p className="font-display text-xl font-semibold text-accent-lime">
+                  {formatCurrency(parkingFeeSummary.totalMonthlyFee || 0)}
                 </p>
               </div>
             </div>
-          )}
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            {statCards.map((card, idx) => (
-              <div
-                key={idx}
-                className={`border rounded-lg p-4 ${getBgClass(card.color)} ${
-                  card.highlight ? 'ring-2 ring-red-400' : ''
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">{card.label}</p>
-                    <p className={`text-2xl font-bold ${getTextClass(card.color)}`}>{card.value}</p>
-                  </div>
-                  <span className="text-3xl opacity-50">{card.icon}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Parking Fee Summary */}
-          {parkingFeeSummary && (
-            <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <TrendingUp className="text-green-600" size={24} />
-                  <div>
-                    <p className="text-sm text-gray-600">Tổng phí gửi xe/tháng</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {new Intl.NumberFormat('vi-VN', {
-                        style: 'currency',
-                        currency: 'VND',
-                        minimumFractionDigits: 0,
-                      }).format(parkingFeeSummary.totalMonthlyFee || 0)}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">Từ {stats.active} xe</p>
-                </div>
-              </div>
+            <div className="flex items-center gap-2 text-sm text-on-dark-muted">
+              <ShieldCheck size={16} className="text-accent-lime" />
+              Từ {stats.active} xe đang gửi
             </div>
-          )}
-        </div>
-
-        {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-3 text-gray-400" size={20} />
-              <input
-                type="text"
-                placeholder="Tìm theo biển số, hãng xe, tên khách..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet"
-              />
-            </div>
-
-            {/* Type Filter */}
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet"
-            >
-              <option value="all">Tất cả loại xe</option>
-              {Object.entries(VEHICLE_TYPES).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
-
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet"
-            >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="active">Đang gửi</option>
-              <option value="inactive">Ngừng gửi</option>
-              <option value="unknown">Xe lạ</option>
-            </select>
           </div>
-        </div>
+        )}
 
-        {/* Vehicles Grid */}
-        <AnimatePresence>
-          {filteredVehicles.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredVehicles.map((vehicle) => {
-                const tenant = tenants.find((t) => t.id === vehicle.tenantId);
-                const room = rooms.find((r) => r.id === vehicle.roomId);
-
-                return (
-                  <motion.div
-                    key={vehicle.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.2 }}
+        <div className="grid gap-5 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] xl:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]">
+          <div className="flex min-h-[560px] flex-col rounded-2xl border border-hairline-cloud bg-surface-light shadow-sm">
+            <div className="border-b border-hairline-cloud bg-ink-deep px-4 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-on-primary">Danh sách xe</p>
+                <button
+                  type="button"
+                  onClick={handleOpenCreate}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline-violet bg-ink-deep text-accent-lime transition hover:border-accent-lime hover:shadow-[0_0_12px_rgba(194,239,78,0.35)]"
+                  title="Thêm xe"
+                >
+                  <Plus size={18} strokeWidth={2.5} />
+                </button>
+              </div>
+              <div className="mt-3 space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 text-on-dark-muted" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Biển số, hãng, tên khách…"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full rounded-lg border border-hairline-violet bg-on-dark-faint py-2 pl-9 pr-3 text-sm text-on-primary placeholder:text-on-dark-muted focus:outline-none focus:ring-1 focus:ring-accent-lime"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="flex-1 rounded-lg border border-hairline-violet bg-on-dark-faint px-2 py-2 text-xs text-on-primary"
                   >
-                    <VehicleCard
-                      vehicle={vehicle}
-                      tenant={tenant}
-                      room={room}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                    />
-                  </motion.div>
-                );
-              })}
+                    <option value="all">Mọi trạng thái</option>
+                    <option value="active">Đang gửi</option>
+                    <option value="inactive">Ngừng gửi</option>
+                    <option value="unknown">Xe lạ</option>
+                  </select>
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="flex-1 rounded-lg border border-hairline-violet bg-on-dark-faint px-2 py-2 text-xs text-on-primary"
+                  >
+                    <option value="all">Mọi loại</option>
+                    <option value="motorcycle">Xe máy</option>
+                    <option value="scooter">Xe tay ga</option>
+                    <option value="bicycle">Xe đạp</option>
+                    <option value="car">Ô tô</option>
+                    <option value="other">Khác</option>
+                  </select>
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="text-center py-12 bg-white rounded-lg">
-              <p className="text-gray-500 text-lg">Không có xe nào</p>
-              <p className="text-gray-400 mt-1">Bắt đầu bằng cách thêm xe mới</p>
+
+            <div className="flex-1 space-y-2 overflow-y-auto p-3">
+              {filteredVehicles.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <Car className="mb-3 text-accent-violet-mid" size={36} />
+                  <p className="text-sm text-muted">Chưa có xe nào</p>
+                  <button type="button" onClick={handleOpenCreate} className="btn-primary mt-4 text-sm">
+                    <Plus size={16} /> Đăng ký xe
+                  </button>
+                </div>
+              ) : (
+                filteredVehicles.map((vehicle) => (
+                  <VehicleListItem
+                    key={vehicle.id}
+                    vehicle={vehicle}
+                    tenant={tenantById[vehicle.tenantId]}
+                    room={roomById[vehicle.roomId]}
+                    selected={String(selectedVehicle?.id) === String(vehicle.id)}
+                    onClick={handleSelectVehicle}
+                  />
+                ))
+              )}
             </div>
-          )}
-        </AnimatePresence>
+          </div>
+
+          <VehicleManagementPanel
+            vehicle={panelMode === 'create' ? null : selectedVehicle}
+            mode={panelMode === 'create' ? 'create' : 'edit'}
+            tenants={tenants}
+            rooms={rooms}
+            loading={panelLoading}
+            onClose={handleClosePanel}
+            onSave={panelMode ? handleSave : undefined}
+            onDelete={handleDelete}
+            onUploadImage={handleUploadImage}
+            saveLoading={saveLoading}
+            saveError={saveError}
+          />
+        </div>
 
         {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+          <div className="mt-4 rounded-lg border border-accent-pink/40 bg-accent-pink/10 px-4 py-3 text-sm text-ink-deep">
             {error}
           </div>
         )}
       </div>
-
-      {/* Form Modal */}
-      {showForm && (
-        <VehicleForm
-          vehicle={editingVehicle}
-          tenants={tenants}
-          rooms={rooms}
-          onSubmit={editingVehicle ? handleEditVehicle : handleAddVehicle}
-          onCancel={() => {
-            setShowForm(false);
-            setEditingVehicle(null);
-            setFormError(null);
-          }}
-          loading={formLoading}
-          error={formError}
-        />
-      )}
     </div>
   );
 };
