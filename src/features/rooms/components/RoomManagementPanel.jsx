@@ -773,7 +773,7 @@ const RoomManagementPanel = ({
                     <Plus size={18} />
                   </button>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+             <div className="stagger-layout grid grid-cols-2 gap-3">
                   {(room.roomImages || []).map((img) => (
                     <div
                       key={img.id ?? img.url}
