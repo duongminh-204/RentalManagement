@@ -30,7 +30,11 @@ const ContractForm = ({
 
   useEffect(() => {
     if (fixedRoomId != null && fixedRoomId !== '') {
-      setFormData((prev) => ({ ...prev, roomId: String(fixedRoomId) }));
+      setFormData((prev) => ({
+        ...prev,
+        roomId: String(fixedRoomId),
+        status: prev.status || 'active',
+      }));
     }
   }, [fixedRoomId]);
 

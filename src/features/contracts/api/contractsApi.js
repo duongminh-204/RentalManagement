@@ -79,7 +79,7 @@ export const uploadContractFile = async (contractId, file) => {
 // Download contract file
 export const downloadContractFile = async (contractId) => {
   try {
-    const response = await api.get(`/contracts/${contractId}/download`, {
+    const response = await api.get(`/contracts/${contractId}/download-file`, {
       responseType: 'blob',
     });
     return response.data;

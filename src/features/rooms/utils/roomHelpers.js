@@ -109,7 +109,7 @@ export const normalizeUserFromApi = (user) => {
   if (!fullName && !avatar) return null;
   return {
     contractId: user.contractId ?? user.ContractId ?? null,
-    userId: user.userId ?? user.UserId ?? user.id ?? null,
+    userId: user.userId ?? user.UserId ?? user.tenantId ?? user.TenantId ?? user.id ?? null,
     fullName: fullName ?? 'Khách thuê',
     avatar,
     email: user.email ?? user.Email ?? null,

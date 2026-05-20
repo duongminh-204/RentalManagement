@@ -124,7 +124,7 @@ const TenantsList = () => {
   };
 
   const handleDelete = async (tenantId) => {
-    if (!window.confirm('Bạn có chắc muốn xóa (vô hiệu hóa) khách thuê này?')) return;
+    if (!window.confirm('Bạn có chắc muốn xóa vĩnh viễn khách thuê này? Toàn bộ hợp đồng liên quan cũng sẽ bị xóa.')) return;
     try {
       await removeTenant(tenantId);
       if (String(selectedTenant?.id) === String(tenantId)) handleClosePanel();

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   X,
   Home,
@@ -191,6 +191,30 @@ const RoomManagementPanel = ({
   }, [canManageExtras, loadRoomContracts, loadTenantOptions]);
 
   const activeContract = getActiveContractForRoom(roomContracts);
+
+  const roomTenants = useMemo(() => {
+    const activeOnRoom = roomContracts.filter(
+      (c) => c.status === 'active' || c.status === 'expiring_soon'
+    );
+    if (activeOnRoom.length) {
+      return activeOnRoom.map((c) => {
+        const tenant = tenantOptions.find((t) => String(t.id) === String(c.tenantId));
+        const fromRoom = (room?.users || []).find(
+          (u) => String(u.userId) === String(c.tenantId)
+        );
+        return {
+          contractId: c.id,
+          userId: c.tenantId,
+          fullName: tenant?.fullName ?? fromRoom?.fullName ?? 'Khách thuê',
+          phone: tenant?.phoneNumber ?? fromRoom?.phone,
+          email: tenant?.email ?? fromRoom?.email,
+          avatar: fromRoom?.avatar ?? tenant?.avatar,
+        };
+      });
+    }
+    return room?.users ?? [];
+  }, [roomContracts, room?.users, tenantOptions]);
+
   const panelRoomOption = room
     ? [{ id: roomId, roomNumber: room.roomNumber || room.roomName }]
     : [];
@@ -216,7 +240,7 @@ const RoomManagementPanel = ({
         }
       } else {
         const created = await createContract(payload);
-        const newId = created?.id ?? created?.data?.id;
+        const newId = created?.id ?? created?.Id ?? created?.data?.id;
         if (contractFile && newId) {
           await uploadContractFile(newId, contractFile);
         }
@@ -324,11 +348,33 @@ const RoomManagementPanel = ({
       setSelectedServiceId('');
     });
 
-  const handleAssignTenant = () =>
-    runAction(async () => {
-      await roomMgmtApi.assignTenant(roomId, { userId: Number(selectedTenantId) });
-      setSelectedTenantId('');
+  const handleOpenAssignContract = () => {
+    if (!selectedTenantId) {
+      setLocalError('Vui lòng chọn khách thuê trước khi tạo hợp đồng.');
+      return;
+    }
+    setEditingContract({
+      tenantId: Number(selectedTenantId),
+      roomId,
+      status: 'active',
     });
+    setContractFormError(null);
+    setShowContractForm(true);
+  };
+
+  const handleRemoveRoomTenant = async (contractId) => {
+    if (
+      !window.confirm(
+        'Hủy hợp đồng của khách thuê với phòng này? Khách vẫn còn trong danh sách quản lý khách thuê.'
+      )
+    ) {
+      return;
+    }
+    await runAction(async () => {
+      await roomMgmtApi.removeTenant(roomId, contractId);
+      await loadRoomContracts();
+    });
+  };
 
   if (!room && !isCreate) {
     return (
@@ -759,33 +805,41 @@ const RoomManagementPanel = ({
 
             {activeTab === 'tenants' && canManageExtras && (
               <div className="space-y-4">
+                <p className="text-xs text-muted">
+                  Gán khách vào phòng bằng cách tạo hợp đồng (tab Thông tin hoặc nút bên dưới). Danh sách
+                  chỉ hiển thị khách có hợp đồng đang hiệu lực với phòng này.
+                </p>
                 <div className="flex gap-2">
                   <select
                     value={selectedTenantId}
                     onChange={(e) => setSelectedTenantId(e.target.value)}
                     className="text-input flex-1"
                   >
-                    <option value="">Chọn người thuê…</option>
-                    {tenantCandidates.map((t) => (
-                      <option key={t.userId} value={t.userId}>
-                        {t.fullName}
-                        {t.phoneNumber ? ` — ${t.phoneNumber}` : ''}
-                      </option>
-                    ))}
+                    <option value="">Chọn khách thuê…</option>
+                    {tenantCandidates.map((t) => {
+                      const id = t.tenantId ?? t.TenantId ?? t.userId;
+                      return (
+                        <option key={id} value={id}>
+                          {t.fullName}
+                          {t.phoneNumber ? ` — ${t.phoneNumber}` : ''}
+                        </option>
+                      );
+                    })}
                   </select>
                   <button
                     type="button"
-                    onClick={handleAssignTenant}
+                    onClick={handleOpenAssignContract}
                     disabled={busy || !selectedTenantId}
                     className="btn-primary shrink-0"
+                    title="Tạo hợp đồng gán khách vào phòng"
                   >
-                    <Plus size={18} />
+                    <FileText size={18} />
                   </button>
                 </div>
                 <ul className="space-y-2">
-                  {(room.users || []).map((u) => (
+                  {roomTenants.map((u) => (
                     <li
-                      key={u.userId}
+                      key={u.contractId ?? u.userId}
                       className="flex items-center gap-3 rounded-xl border border-hairline-violet bg-ink-deep p-3 text-on-primary"
                     >
                       {u.avatar ? (
@@ -806,13 +860,11 @@ const RoomManagementPanel = ({
                       {u.contractId && (
                         <button
                           type="button"
-                          onClick={() =>
-                            runAction(() =>
-                              roomMgmtApi.removeTenant(roomId, u.contractId)
-                            )
-                          }
+                          onClick={() => handleRemoveRoomTenant(u.contractId)}
+                          disabled={busy}
                           className="rounded-md p-2 text-accent-pink hover:bg-on-dark-faint"
-                          aria-label="Gỡ người thuê"
+                          aria-label="Hủy hợp đồng"
+                          title="Hủy hợp đồng với phòng này"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -820,8 +872,10 @@ const RoomManagementPanel = ({
                     </li>
                   ))}
                 </ul>
-                {!room.users?.length && (
-                  <p className="text-center text-sm text-muted">Chưa gán người thuê</p>
+                {!roomTenants.length && (
+                  <p className="text-center text-sm text-muted">
+                    Chưa có khách thuê với hợp đồng hiệu lực cho phòng này
+                  </p>
                 )}
               </div>
             )}
