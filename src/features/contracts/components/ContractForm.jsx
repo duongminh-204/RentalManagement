@@ -13,12 +13,13 @@ const ContractForm = ({
   error = null,
 }) => {
   const [formData, setFormData] = useState({
-    contractNumber: '',
+    // contractNumber: '',
     tenantId: '',
     roomId: '',
     startDate: '',
     endDate: '',
-    rentalPrice: '',
+    // rentalPrice: '',
+    deposit: '',
     terms: '',
     notes: '',
     status: 'pending',
@@ -41,11 +42,12 @@ const ContractForm = ({
   useEffect(() => {
     if (contract) {
       setFormData({
-        contractNumber: contract.contractNumber || '',
+        // contractNumber: contract.contractNumber || '',
         tenantId: contract.tenantId || '',
         roomId: contract.roomId || fixedRoomId || '',
         startDate: contract.startDate ? new Date(contract.startDate).toISOString().split('T')[0] : '',
         endDate: contract.endDate ? new Date(contract.endDate).toISOString().split('T')[0] : '',
+        deposit: contract.deposit ?? '',
         rentalPrice: contract.rentalPrice || '',
         terms: contract.terms || '',
         notes: contract.notes || '',
@@ -60,11 +62,11 @@ const ContractForm = ({
   const validateForm = () => {
     const errors = {};
 
-    if (!formData.contractNumber.trim()) {
-      errors.contractNumber = 'Vui lòng nhập số hợp đồng';
-    } else if (!validateContractNumber(formData.contractNumber)) {
-      errors.contractNumber = 'Số hợp đồng không hợp lệ';
-    }
+    // if (!formData.contractNumber.trim()) {
+    //   errors.contractNumber = 'Vui lòng nhập số hợp đồng';
+    // } else if (!validateContractNumber(formData.contractNumber)) {
+    //   errors.contractNumber = 'Số hợp đồng không hợp lệ';
+    // }
 
     if (!formData.tenantId) {
       errors.tenantId = 'Vui lòng chọn khách thuê';
@@ -86,11 +88,16 @@ const ContractForm = ({
       errors.endDate = 'Ngày hết hạn phải sau ngày bắt đầu';
     }
 
-    if (!formData.rentalPrice) {
-      errors.rentalPrice = 'Vui lòng nhập giá thuê';
-    } else if (isNaN(formData.rentalPrice) || formData.rentalPrice < 0) {
-      errors.rentalPrice = 'Giá thuê phải là số dương';
+    if (!formData.deposit) {
+      errors.deposit = 'Vui lòng nhập tiền cọc';
+    } else if (isNaN(formData.deposit) || formData.deposit < 0) {
+      errors.deposit = 'Tiền cọc phải là số dương';
     }
+    // if (!formData.rentalPrice) {
+    //   errors.rentalPrice = 'Vui lòng nhập giá thuê';
+    // } else if (isNaN(formData.rentalPrice) || formData.rentalPrice < 0) {
+    //   errors.rentalPrice = 'Giá thuê phải là số dương';
+    // }
 
     if (!formData.terms.trim()) {
       errors.terms = 'Vui lòng nhập điều khoản';
@@ -150,6 +157,7 @@ const ContractForm = ({
       onSubmit({
         ...formData,
         roomId: fixedRoomId ?? formData.roomId,
+        deposit: Number(formData.deposit),
         contractFile,
       });
     }
@@ -183,7 +191,7 @@ const ContractForm = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Số hợp đồng */}
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-900 mb-2">
                 Số hợp đồng *
               </label>
@@ -200,7 +208,7 @@ const ContractForm = ({
               {validationErrors.contractNumber && (
                 <p className="text-red-500 text-sm mt-1">{validationErrors.contractNumber}</p>
               )}
-            </div>
+            </div> */}
 
             {/* Khách thuê */}
             <div>
@@ -211,9 +219,8 @@ const ContractForm = ({
                 name="tenantId"
                 value={formData.tenantId}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
-                  validationErrors.tenantId ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${validationErrors.tenantId ? 'border-red-500' : 'border-gray-300'
+                  }`}
               >
                 <option value="">-- Chọn khách thuê --</option>
                 {tenants.map((tenant) => (
@@ -229,29 +236,28 @@ const ContractForm = ({
 
             {/* Phòng */}
             {fixedRoomId == null || fixedRoomId === '' ? (
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
-                Phòng *
-              </label>
-              <select
-                name="roomId"
-                value={formData.roomId}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
-                  validationErrors.roomId ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">-- Chọn phòng --</option>
-                {rooms.map((room) => (
-                  <option key={room.id} value={room.id}>
-                    Phòng {room.roomNumber}
-                  </option>
-                ))}
-              </select>
-              {validationErrors.roomId && (
-                <p className="text-red-500 text-sm mt-1">{validationErrors.roomId}</p>
-              )}
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Phòng *
+                </label>
+                <select
+                  name="roomId"
+                  value={formData.roomId}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${validationErrors.roomId ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                >
+                  <option value="">-- Chọn phòng --</option>
+                  {rooms.map((room) => (
+                    <option key={room.id} value={room.id}>
+                      Phòng {room.roomNumber}
+                    </option>
+                  ))}
+                </select>
+                {validationErrors.roomId && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.roomId}</p>
+                )}
+              </div>
             ) : (
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-2">Phòng</label>
@@ -291,9 +297,8 @@ const ContractForm = ({
                 name="startDate"
                 value={formData.startDate}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
-                  validationErrors.startDate ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${validationErrors.startDate ? 'border-red-500' : 'border-gray-300'
+                  }`}
               />
               {validationErrors.startDate && (
                 <p className="text-red-500 text-sm mt-1">{validationErrors.startDate}</p>
@@ -310,32 +315,30 @@ const ContractForm = ({
                 name="endDate"
                 value={formData.endDate}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
-                  validationErrors.endDate ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${validationErrors.endDate ? 'border-red-500' : 'border-gray-300'
+                  }`}
               />
               {validationErrors.endDate && (
                 <p className="text-red-500 text-sm mt-1">{validationErrors.endDate}</p>
               )}
             </div>
 
-            {/* Giá thuê */}
+            {/* Tiền cọc */}
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-2">
-                Giá thuê (VNĐ/tháng) *
+                Tiền cọc (VNĐ) *
               </label>
               <input
                 type="number"
-                name="rentalPrice"
-                value={formData.rentalPrice}
+                name="deposit"
+                value={formData.deposit}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
-                  validationErrors.rentalPrice ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${validationErrors.deposit ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="3000000"
               />
-              {validationErrors.rentalPrice && (
-                <p className="text-red-500 text-sm mt-1">{validationErrors.rentalPrice}</p>
+              {validationErrors.deposit && (
+                <p className="text-red-500 text-sm mt-1">{validationErrors.deposit}</p>
               )}
             </div>
           </div>
@@ -350,9 +353,8 @@ const ContractForm = ({
               value={formData.terms}
               onChange={handleChange}
               rows="6"
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${
-                validationErrors.terms ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet ${validationErrors.terms ? 'border-red-500' : 'border-gray-300'
+                }`}
               placeholder="Nhập các điều khoản (thanh toán, chính sách hủy, bảo hành nhà cửa, v.v.)"
             />
             {validationErrors.terms && (

@@ -11,12 +11,12 @@ export const normalizeContractFromApi = (raw) => {
 
   return {
     id,
-    contractNumber: raw.contractNumber ?? raw.ContractNumber ?? '',
+    // contractNumber: raw.contractNumber ?? raw.ContractNumber ?? '',
     tenantId: raw.tenantId ?? raw.TenantId ?? null,
     roomId: raw.roomId ?? raw.RoomId ?? null,
     startDate,
     endDate,
-    rentalPrice: Number(raw.rentalPrice ?? raw.RentalPrice) || 0,
+    deposit: Number(raw.deposit ?? raw.Deposit) || 0,
     terms: raw.terms ?? raw.Terms ?? '',
     notes: raw.notes ?? raw.Notes ?? '',
     status,

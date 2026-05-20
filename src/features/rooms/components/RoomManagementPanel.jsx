@@ -429,13 +429,12 @@ const RoomManagementPanel = ({
               type="button"
               disabled={disabled}
               onClick={() => !disabled && setActiveTab(id)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition ${
-                activeTab === id
+              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition ${activeTab === id
                   ? 'bg-primary text-on-primary'
                   : disabled
                     ? 'cursor-not-allowed text-muted opacity-50'
                     : 'text-ink-deep hover:bg-surface-press'
-              }`}
+                }`}
             >
               <Icon size={14} />
               {label}
@@ -636,9 +635,9 @@ const RoomManagementPanel = ({
                             </p>
                           </div>
                           <div>
-                            <p className="text-[10px] uppercase text-on-dark-muted">Giá thuê</p>
+                            <p className="text-[10px] uppercase text-on-dark-muted">Tiền cọc</p>
                             <p className="font-medium text-accent-lime">
-                              {formatCurrency(activeContract.rentalPrice)}/tháng
+                              {formatCurrency(activeContract.deposit || activeContract.securityDeposit || 0)}
                             </p>
                           </div>
                         </div>
@@ -687,16 +686,16 @@ const RoomManagementPanel = ({
                           )}
                           {(activeContract.status === 'expiring_soon' ||
                             activeContract.status === 'expired') && (
-                            <button
-                              type="button"
-                              onClick={() => handleContractRenew(activeContract)}
-                              disabled={busy}
-                              className="flex items-center gap-1 rounded-lg border border-accent-lime/50 px-2.5 py-1.5 text-xs font-medium text-accent-lime transition hover:bg-on-dark-faint"
-                            >
-                              <RefreshCw size={14} />
-                              Gia hạn
-                            </button>
-                          )}
+                              <button
+                                type="button"
+                                onClick={() => handleContractRenew(activeContract)}
+                                disabled={busy}
+                                className="flex items-center gap-1 rounded-lg border border-accent-lime/50 px-2.5 py-1.5 text-xs font-medium text-accent-lime transition hover:bg-on-dark-faint"
+                              >
+                                <RefreshCw size={14} />
+                                Gia hạn
+                              </button>
+                            )}
                           <button
                             type="button"
                             onClick={() => {
