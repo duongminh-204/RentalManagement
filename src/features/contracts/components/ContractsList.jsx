@@ -103,11 +103,11 @@ const ContractsList = ({ tenants = [], rooms = [] }) => {
     }
   };
 
-  const handleDownload = async (contractId, contractNumber) => {
+  const handleDownload = async (contract) => {
     try {
-      await downloadFile(contractId, contractNumber);
+      await downloadFile(contract);
     } catch (err) {
-      setFormError(err.response?.data?.message || 'Lỗi khi tải file hợp đồng');
+      setFormError(err.message || err.response?.data?.message || 'Lỗi khi xem/tải file hợp đồng');
     }
   };
 

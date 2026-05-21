@@ -100,7 +100,7 @@ const ContractCard = ({ contract, tenant, room, onEdit, onDelete, onDownload, on
         <div className="flex gap-2 flex-wrap">
           {contract.fileUrl && (
             <button
-              onClick={() => onDownload(contract.id, contract.contractNumber)}
+              onClick={() => onDownload(contract)}
               className="flex-1 min-w-[100px] px-3 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors text-sm font-medium flex items-center justify-center gap-1"
             >
               <Download size={16} /> Download

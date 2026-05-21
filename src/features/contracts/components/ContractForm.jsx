@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Upload, AlertCircle } from 'lucide-react';
+import { X, Upload, AlertCircle, FileText } from 'lucide-react';
 import DateInput from '../../../components/common/DateInput';
 import { toApiDate } from '../../../utils/dateHelpers';
+import { resolveMediaUrl } from '../../tenants/utils/tenantHelpers';
+import {
+  getContractFileName,
+  isImageUrl,
+  isPdfUrl,
+} from '../utils/contractFileHelpers';
 import {
   validateContractDates,
   getContractStatusLabel,
@@ -18,6 +24,7 @@ const ContractForm = ({
   onCancel,
   loading = false,
   error = null,
+  embedded = false,
 }) => {
   const [formData, setFormData] = useState({
     // contractNumber: '',
@@ -32,7 +39,8 @@ const ContractForm = ({
   });
 
   const [contractFile, setContractFile] = useState(null);
-  const [filePreview, setFilePreview] = useState(contract?.fileUrl || null);
+  const [filePreview, setFilePreview] = useState(null);
+  const [uploadedFileName, setUploadedFileName] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
@@ -58,8 +66,14 @@ const ContractForm = ({
         notes: contract.notes || '',
       });
       if (contract.fileUrl) {
-        setFilePreview(contract.fileUrl);
+        const resolved = resolveMediaUrl(contract.fileUrl);
+        setFilePreview(resolved);
+        setUploadedFileName(getContractFileName(contract));
+      } else {
+        setFilePreview(null);
+        setUploadedFileName('');
       }
+      setContractFile(null);
     }
   }, [contract]);
 
@@ -153,17 +167,29 @@ const ContractForm = ({
         return;
       }
       setContractFile(file);
+      setUploadedFileName(file.name);
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
-        reader.onload = (e) => {
-          setFilePreview(e.target.result);
+        reader.onload = (ev) => {
+          setFilePreview(ev.target.result);
         };
         reader.readAsDataURL(file);
       } else {
-        setFilePreview(`📄 ${file.name}`);
+        setFilePreview('__pdf__');
       }
     }
   };
+
+  const previewIsImage =
+    filePreview &&
+    filePreview !== '__pdf__' &&
+    (filePreview.startsWith('data:image') || isImageUrl(filePreview));
+
+  const previewIsPdf =
+    filePreview === '__pdf__' ||
+    (filePreview &&
+      !previewIsImage &&
+      (isPdfUrl(filePreview) || String(uploadedFileName).toLowerCase().endsWith('.pdf')));
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -177,25 +203,30 @@ const ContractForm = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+  const formShell = (
+      <div
+        className={`flex h-full w-full flex-col overflow-hidden bg-surface-light ${
+          embedded ? '' : 'max-h-[90vh] rounded-lg shadow-lg'
+        }`}
+      >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {contract ? 'Chỉnh sửa hợp đồng' : 'Tạo hợp đồng mới'}
+        <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-hairline-cloud bg-surface-light px-6 py-4">
+          <h2 className="font-display text-xl font-semibold text-ink-deep">
+            {contract?.id ? 'Chỉnh sửa hợp đồng' : 'Tạo hợp đồng mới'}
           </h2>
           <button
+            type="button"
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="rounded-md p-2 text-muted transition hover:bg-surface-press hover:text-ink-deep"
             disabled={loading}
+            aria-label="Đóng"
           >
             <X size={24} />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 space-y-6 overflow-y-auto p-6">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
               <AlertCircle className="text-red-600 mt-0.5" size={20} />
@@ -391,11 +422,11 @@ const ContractForm = ({
             <label className="block text-sm font-medium text-gray-900 mb-3">
               Upload hợp đồng (PDF/Ảnh)
             </label>
-            <div className="flex gap-6">
-              <div className="flex-1">
-                <label className="flex items-center justify-center px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors">
+            <div className="flex min-w-0 gap-4">
+              <div className="min-w-0 flex-1">
+                <label className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 px-4 py-6 transition-colors hover:border-gray-400">
                   <div className="text-center">
-                    <Upload size={24} className="mx-auto text-gray-400 mb-2" />
+                    <Upload size={24} className="mx-auto mb-2 text-gray-400" />
                     <p className="text-sm font-medium text-gray-700">Chọn file</p>
                     <p className="text-xs text-gray-500">PDF hoặc ảnh, tối đa 10MB</p>
                   </div>
@@ -410,16 +441,22 @@ const ContractForm = ({
               </div>
 
               {filePreview && (
-                <div className="w-32">
-                  {typeof filePreview === 'string' && filePreview.startsWith('data:image') ? (
+                <div className="flex w-36 min-w-0 shrink-0 flex-col gap-1">
+                  {previewIsImage ? (
                     <img
                       src={filePreview}
-                      alt="Contract Preview"
-                      className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                      alt="Xem trước hợp đồng"
+                      className="h-32 w-full rounded-lg border border-gray-300 object-cover"
                     />
                   ) : (
-                    <div className="w-full h-32 flex items-center justify-center rounded-lg border border-gray-300 bg-gray-50">
-                      <p className="text-center text-sm text-gray-600">{filePreview}</p>
+                    <div className="flex h-32 w-full flex-col items-center justify-center gap-2 rounded-lg border border-gray-300 bg-gray-50 px-2">
+                      <FileText size={28} className="shrink-0 text-gray-500" />
+                      <p
+                        className="w-full truncate text-center text-xs text-gray-600"
+                        title={uploadedFileName || getContractFileName(contract)}
+                      >
+                        {uploadedFileName || getContractFileName(contract)}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -447,6 +484,15 @@ const ContractForm = ({
           </div>
         </form>
       </div>
+  );
+
+  if (embedded) {
+    return formShell;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="max-w-2xl w-full">{formShell}</div>
     </div>
   );
 };

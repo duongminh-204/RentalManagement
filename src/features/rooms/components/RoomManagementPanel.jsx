@@ -14,9 +14,15 @@ import {
   Download,
   Pencil,
   RefreshCw,
+  Eye,
 } from 'lucide-react';
 import RoomStatusBadge from '../../../components/common/RoomStatusBadge';
-import { formatCurrency, getRoomDisplayName } from '../utils/roomHelpers';
+import { formatCurrency, getRoomDisplayName, resolveMediaUrl } from '../utils/roomHelpers';
+import {
+  openOrDownloadContractFile,
+  isImageUrl,
+  isPdfUrl,
+} from '../../contracts/utils/contractFileHelpers';
 import * as roomMgmtApi from '../api/roomManagementApi';
 import {
   getContracts,
@@ -25,7 +31,6 @@ import {
   updateContract,
   deleteContract,
   uploadContractFile,
-  downloadContractFile,
   renewContract,
 } from '../../contracts/api/contractsApi';
 import {
@@ -89,10 +94,8 @@ const RoomManagementPanel = ({
   const [info, setInfo] = useState(emptyInfo());
   const [imageUrl, setImageUrl] = useState('');
   const [serviceCatalog, setServiceCatalog] = useState([]);
-  const [tenantCandidates, setTenantCandidates] = useState([]);
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [serviceQty, setServiceQty] = useState(1);
-  const [selectedTenantId, setSelectedTenantId] = useState('');
   const [deviceForm, setDeviceForm] = useState({
     deviceName: '',
     quantity: 1,
@@ -108,6 +111,7 @@ const RoomManagementPanel = ({
   const [editingContract, setEditingContract] = useState(null);
   const [contractFormLoading, setContractFormLoading] = useState(false);
   const [contractFormError, setContractFormError] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
 
   const roomId = room?.id ?? room?.roomId;
   const isCreate = mode === 'create';
@@ -134,12 +138,8 @@ const RoomManagementPanel = ({
 
   const loadCatalogs = useCallback(async () => {
     try {
-      const [services, tenants] = await Promise.all([
-        roomMgmtApi.getServiceCatalog(),
-        roomMgmtApi.getTenantCandidates(),
-      ]);
+      const services = await roomMgmtApi.getServiceCatalog();
       setServiceCatalog(Array.isArray(services) ? services : []);
-      setTenantCandidates(Array.isArray(tenants) ? tenants : []);
     } catch (e) {
       console.error(e);
     }
@@ -222,17 +222,26 @@ const RoomManagementPanel = ({
         const fromRoom = (room?.users || []).find(
           (u) => String(u.userId) === String(c.tenantId)
         );
+        const fileUrl = resolveMediaUrl(c.fileUrl);
+        const avatar = resolveMediaUrl(
+          tenant?.avatar ?? fromRoom?.avatar ?? tenant?.idCardImage
+        );
         return {
           contractId: c.id,
+          contract: c,
           userId: c.tenantId,
           fullName: tenant?.fullName ?? fromRoom?.fullName ?? 'Khách thuê',
           phone: tenant?.phoneNumber ?? fromRoom?.phone,
           email: tenant?.email ?? fromRoom?.email,
-          avatar: fromRoom?.avatar ?? tenant?.avatar,
+          avatar,
+          fileUrl,
+          contractIsImage: fileUrl && isImageUrl(fileUrl),
+          contractIsPdf: fileUrl && isPdfUrl(fileUrl),
+          contractStatus: resolveContractStatus(c),
         };
       });
     }
-    return room?.users ?? [];
+    return [];
   }, [roomContracts, room?.users, tenantOptions]);
 
   const panelRoomOption = room
@@ -290,17 +299,9 @@ const RoomManagementPanel = ({
   const handleContractDownload = async (contract) => {
     try {
       setLocalError(null);
-      const blob = await downloadContractFile(contract.id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Hop_dong_${contract.contractNumber}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      await openOrDownloadContractFile(contract);
     } catch (err) {
-      setLocalError(err.response?.data?.message || 'Lỗi khi tải file hợp đồng');
+      setLocalError(err.message || err.response?.data?.message || 'Lỗi khi xem/tải file hợp đồng');
     }
   };
 
@@ -371,19 +372,6 @@ const RoomManagementPanel = ({
       setSelectedServiceId('');
     });
 
-  const handleOpenAssignContract = () => {
-    if (!selectedTenantId) {
-      setLocalError('Vui lòng chọn khách thuê trước khi tạo hợp đồng.');
-      return;
-    }
-    setEditingContract({
-      tenantId: Number(selectedTenantId),
-      roomId,
-    });
-    setContractFormError(null);
-    setShowContractForm(true);
-  };
-
   const handleRemoveRoomTenant = async (contractId) => {
     if (
       !window.confirm(
@@ -411,7 +399,7 @@ const RoomManagementPanel = ({
   }
 
   return (
-    <aside className="flex h-full max-h-[calc(100vh-10rem)] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-hairline-cloud bg-surface-light shadow-[var(--shadow-card)] lg:min-h-[600px] xl:min-h-[640px]">
+    <aside className="relative flex h-full max-h-[calc(100vh-10rem)] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-hairline-cloud bg-surface-light shadow-[var(--shadow-card)] lg:min-h-[600px] xl:min-h-[640px]">
       <div className="border-b border-hairline-cloud bg-ink-deep px-5 py-4 text-on-primary">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -839,67 +827,91 @@ const RoomManagementPanel = ({
             {activeTab === 'tenants' && canManageExtras && (
               <div className="space-y-4">
                 <p className="text-xs text-muted">
-                  Gán khách vào phòng bằng cách tạo hợp đồng (tab Thông tin hoặc nút bên dưới). Danh sách
-                  chỉ hiển thị khách có hợp đồng đang hiệu lực với phòng này.
+                  Khách thuê có hợp đồng còn hiệu lực tại phòng này
                 </p>
-                <div className="flex gap-2">
-                  <select
-                    value={selectedTenantId}
-                    onChange={(e) => setSelectedTenantId(e.target.value)}
-                    className="text-input flex-1"
-                  >
-                    <option value="">Chọn khách thuê…</option>
-                    {tenantCandidates.map((t) => {
-                      const id = t.tenantId ?? t.TenantId ?? t.userId;
-                      return (
-                        <option key={id} value={id}>
-                          {t.fullName}
-                          {t.phoneNumber ? ` — ${t.phoneNumber}` : ''}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={handleOpenAssignContract}
-                    disabled={busy || !selectedTenantId}
-                    className="btn-primary shrink-0"
-                    title="Tạo hợp đồng gán khách vào phòng"
-                  >
-                    <FileText size={18} />
-                  </button>
-                </div>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {roomTenants.map((u) => (
                     <li
                       key={u.contractId ?? u.userId}
-                      className="flex items-center gap-3 rounded-xl border border-hairline-violet bg-ink-deep p-3 text-on-primary"
+                      className="rounded-xl border border-hairline-violet bg-ink-deep p-3 text-on-primary"
                     >
-                      {u.avatar ? (
-                        <img
-                          src={u.avatar}
-                          alt=""
-                          className="h-10 w-10 rounded-full border border-accent-lime object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-violet-deep text-sm font-bold">
-                          {u.fullName?.[0]}
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium">{u.fullName}</p>
-                        <p className="text-xs text-on-dark-muted">{u.phone || u.email}</p>
-                      </div>
-                      {u.contractId && (
+                      <div className="flex gap-3">
                         <button
                           type="button"
-                          onClick={() => handleRemoveRoomTenant(u.contractId)}
-                          disabled={busy}
-                          className="rounded-md p-2 text-accent-pink hover:bg-on-dark-faint"
-                          aria-label="Hủy hợp đồng"
-                          title="Hủy hợp đồng với phòng này"
+                          onClick={() => u.avatar && setPreviewImage(u.avatar)}
+                          className="shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-lime"
+                          title="Xem ảnh khách thuê"
+                          disabled={!u.avatar}
                         >
-                          <Trash2 size={16} />
+                          {u.avatar ? (
+                            <img
+                              src={u.avatar}
+                              alt={u.fullName}
+                              className="h-14 w-14 rounded-full border-2 border-accent-lime object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-violet-deep text-lg font-bold">
+                              {u.fullName?.[0]}
+                            </div>
+                          )}
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold">{u.fullName}</p>
+                          <p className="text-xs text-on-dark-muted">{u.phone || u.email || '—'}</p>
+                          {u.contract && (
+                            <p className="mt-1 text-xs text-on-dark-muted">
+                              {formatContractDate(u.contract.startDate)} →{' '}
+                              {formatContractDate(u.contract.endDate)}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex shrink-0 flex-col gap-1">
+                          {u.fileUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => handleContractDownload(u.contract)}
+                              className="flex items-center gap-1 rounded-lg border border-hairline-violet px-2 py-1 text-[10px] font-medium hover:bg-on-dark-faint"
+                              title="Xem hợp đồng"
+                            >
+                              <Eye size={12} />
+                              HĐ
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-on-dark-muted">Chưa có file</span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveRoomTenant(u.contractId)}
+                            disabled={busy}
+                            className="rounded-md p-1.5 text-accent-pink hover:bg-on-dark-faint"
+                            aria-label="Hủy hợp đồng"
+                            title="Hủy hợp đồng"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                      {u.fileUrl && u.contractIsImage && (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewImage(u.fileUrl)}
+                          className="mt-3 block w-full overflow-hidden rounded-lg border border-hairline-violet focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-lime"
+                        >
+                          <img
+                            src={u.fileUrl}
+                            alt="Hợp đồng"
+                            className="max-h-36 w-full object-cover object-top"
+                          />
+                        </button>
+                      )}
+                      {u.fileUrl && u.contractIsPdf && (
+                        <button
+                          type="button"
+                          onClick={() => handleContractDownload(u.contract)}
+                          className="mt-3 flex w-full items-center gap-2 rounded-lg border border-dashed border-hairline-violet bg-on-dark-faint/50 px-3 py-2 text-left text-xs hover:bg-on-dark-faint"
+                        >
+                          <FileText size={18} className="shrink-0 text-accent-lime" />
+                          <span className="min-w-0 truncate">Xem file PDF hợp đồng</span>
                         </button>
                       )}
                     </li>
@@ -1052,20 +1064,47 @@ const RoomManagementPanel = ({
       </div>
 
       {showContractForm && canManageExtras && (
-        <ContractForm
-          contract={editingContract}
-          tenants={tenantOptions}
-          rooms={panelRoomOption}
-          fixedRoomId={roomId}
-          onSubmit={handleContractSubmit}
-          onCancel={() => {
-            setShowContractForm(false);
-            setEditingContract(null);
-            setContractFormError(null);
-          }}
-          loading={contractFormLoading}
-          error={contractFormError}
-        />
+        <div className="absolute inset-0 z-20 flex flex-col overflow-hidden bg-surface-light">
+          <ContractForm
+            embedded
+            contract={editingContract}
+            tenants={tenantOptions}
+            rooms={panelRoomOption}
+            fixedRoomId={roomId}
+            onSubmit={handleContractSubmit}
+            onCancel={() => {
+              setShowContractForm(false);
+              setEditingContract(null);
+              setContractFormError(null);
+            }}
+            loading={contractFormLoading}
+            error={contractFormError}
+          />
+        </div>
+      )}
+
+      {previewImage && (
+        <div
+          className="absolute inset-0 z-30 flex items-center justify-center bg-ink-deep/80 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setPreviewImage(null)}
+        >
+          <button
+            type="button"
+            className="absolute right-3 top-3 rounded-full bg-on-dark-faint p-2 text-on-primary"
+            onClick={() => setPreviewImage(null)}
+            aria-label="Đóng"
+          >
+            <X size={20} />
+          </button>
+          <img
+            src={previewImage}
+            alt="Xem ảnh"
+            className="max-h-full max-w-full rounded-lg object-contain shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       )}
     </aside>
   );
