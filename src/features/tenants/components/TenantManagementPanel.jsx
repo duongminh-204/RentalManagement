@@ -28,6 +28,7 @@ import {
   validateCCCD,
   validatePhoneNumber,
 } from '../utils/tenantHelpers';
+import DateInput from '../../../components/common/DateInput';
 import { getAllRooms } from '../../rooms/api/roomsApi';
 import { normalizeRoomsList } from '../../rooms/utils/roomHelpers';
 import { getTenantHistory } from '../api/tenantsApi';
@@ -408,8 +409,7 @@ const TenantManagementPanel = ({
                       <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase text-accent-violet-mid">
                         <Calendar size={12} /> Ngày vào
                       </label>
-                      <input
-                        type="date"
+                      <DateInput
                         name="moveInDate"
                         value={form.moveInDate}
                         onChange={handleChange}
@@ -420,8 +420,7 @@ const TenantManagementPanel = ({
                       <label className="mb-1 text-xs font-semibold uppercase text-accent-violet-mid">
                         Ngày ra (dự kiến)
                       </label>
-                      <input
-                        type="date"
+                      <DateInput
                         name="moveOutDate"
                         value={form.moveOutDate}
                         onChange={handleChange}

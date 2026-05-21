@@ -36,6 +36,9 @@ import {
   formatDate as formatContractDate,
   calculateDaysUntilExpiry,
   calculateContractDuration,
+  isContractEffective,
+  prepareContractPayload,
+  resolveContractStatus,
 } from '../../contracts/utils/contractHelpers';
 import { getTenants } from '../../tenants/api/tenantsApi';
 import { normalizeTenantsList } from '../../tenants/utils/tenantHelpers';
@@ -192,10 +195,27 @@ const RoomManagementPanel = ({
 
   const activeContract = getActiveContractForRoom(roomContracts);
 
+  const hasEffectiveContract = useMemo(
+    () => roomContracts.some((c) => isContractEffective(c)),
+    [roomContracts]
+  );
+
+  const hasTenantsOnRoom = useMemo(() => {
+    const activeOnRoom = roomContracts.filter((c) => {
+      const s = resolveContractStatus(c);
+      return s === 'active' || s === 'expiring_soon';
+    });
+    if (activeOnRoom.length) return true;
+    return (room?.users?.length ?? 0) > 0;
+  }, [roomContracts, room?.users]);
+
+  const canEditRoomStatus = !hasTenantsOnRoom && !hasEffectiveContract;
+
   const roomTenants = useMemo(() => {
-    const activeOnRoom = roomContracts.filter(
-      (c) => c.status === 'active' || c.status === 'expiring_soon'
-    );
+    const activeOnRoom = roomContracts.filter((c) => {
+      const s = resolveContractStatus(c);
+      return s === 'active' || s === 'expiring_soon';
+    });
     if (activeOnRoom.length) {
       return activeOnRoom.map((c) => {
         const tenant = tenantOptions.find((t) => String(t.id) === String(c.tenantId));
@@ -232,7 +252,10 @@ const RoomManagementPanel = ({
     setContractFormError(null);
     try {
       const { contractFile, ...contractData } = formData;
-      const payload = { ...contractData, roomId: roomId ?? contractData.roomId };
+      const payload = prepareContractPayload({
+        ...contractData,
+        roomId: roomId ?? contractData.roomId,
+      });
       if (editingContract?.id) {
         await updateContract(editingContract.id, payload);
         if (contractFile && typeof contractFile !== 'string') {
@@ -309,7 +332,7 @@ const RoomManagementPanel = ({
       waterPrice: Number(info.waterPrice),
       area: info.area !== '' ? Number(info.area) : null,
       maxPeople: info.maxPeople !== '' ? Number(info.maxPeople) : null,
-      status: info.status,
+      status: canEditRoomStatus ? info.status : (room?.status ?? info.status),
       description: info.description || null,
     });
   };
@@ -356,7 +379,6 @@ const RoomManagementPanel = ({
     setEditingContract({
       tenantId: Number(selectedTenantId),
       roomId,
-      status: 'active',
     });
     setContractFormError(null);
     setShowContractForm(true);
@@ -493,12 +515,23 @@ const RoomManagementPanel = ({
                       name="status"
                       value={info.status}
                       onChange={handleInfoChange}
-                      className="text-input"
+                      className="text-input disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={!canEditRoomStatus}
+                      title={
+                        !canEditRoomStatus
+                          ? 'Không thể đổi trạng thái khi phòng còn người thuê hoặc hợp đồng còn hiệu lực'
+                          : undefined
+                      }
                     >
                       <option value="vacant">Trống</option>
                       <option value="occupied">Đang thuê</option>
                       <option value="maintenance">Bảo trì</option>
                     </select>
+                    {!canEditRoomStatus && (
+                      <p className="mt-1 text-xs text-muted">
+                        Trạng thái bị khóa: phòng đang có người thuê hoặc hợp đồng còn hiệu lực.
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -684,8 +717,9 @@ const RoomManagementPanel = ({
                               Tải file
                             </button>
                           )}
-                          {(activeContract.status === 'expiring_soon' ||
-                            activeContract.status === 'expired') && (
+                          {(['expiring_soon', 'expired'].includes(
+                            resolveContractStatus(activeContract)
+                          )) && (
                               <button
                                 type="button"
                                 onClick={() => handleContractRenew(activeContract)}

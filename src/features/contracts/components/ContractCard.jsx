@@ -3,6 +3,7 @@ import { Edit2, Trash2, Download, AlertCircle, Calendar, DollarSign } from 'luci
 import {
   getContractStatusLabel,
   getContractStatusColor,
+  resolveContractStatus,
   formatDate,
   formatCurrency,
   calculateDaysUntilExpiry,
@@ -10,9 +11,10 @@ import {
 } from '../utils/contractHelpers';
 
 const ContractCard = ({ contract, tenant, room, onEdit, onDelete, onDownload, onRenew }) => {
+  const status = resolveContractStatus(contract);
   const daysUntilExpiry = calculateDaysUntilExpiry(contract.endDate);
   const duration = calculateContractDuration(contract.startDate, contract.endDate);
-  const isExpiringsSoon = daysUntilExpiry <= 30 && daysUntilExpiry >= 0;
+  const isExpiringsSoon = status === 'expiring_soon';
 
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow border border-gray-200 overflow-hidden">
@@ -23,8 +25,8 @@ const ContractCard = ({ contract, tenant, room, onEdit, onDelete, onDownload, on
             <h3 className="text-lg font-semibold text-gray-900">{contract.contractNumber}</h3>
             <p className="text-sm text-gray-500">{tenant?.fullName || 'N/A'}</p>
           </div>
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getContractStatusColor(contract.status)}`}>
-            {getContractStatusLabel(contract.status)}
+          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getContractStatusColor(status)}`}>
+            {getContractStatusLabel(status)}
           </span>
         </div>
 

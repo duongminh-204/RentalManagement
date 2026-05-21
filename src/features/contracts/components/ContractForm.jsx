@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Upload, AlertCircle } from 'lucide-react';
-import { validateContractDates, formatDate, validateContractNumber } from '../utils/contractHelpers';
+import DateInput from '../../../components/common/DateInput';
+import { toApiDate } from '../../../utils/dateHelpers';
+import {
+  validateContractDates,
+  getContractStatusLabel,
+  getContractStatusColor,
+  resolveContractStatus,
+} from '../utils/contractHelpers';
 
 const ContractForm = ({
   contract = null,
@@ -22,7 +29,6 @@ const ContractForm = ({
     deposit: '',
     terms: '',
     notes: '',
-    status: 'pending',
   });
 
   const [contractFile, setContractFile] = useState(null);
@@ -34,7 +40,6 @@ const ContractForm = ({
       setFormData((prev) => ({
         ...prev,
         roomId: String(fixedRoomId),
-        status: prev.status || 'active',
       }));
     }
   }, [fixedRoomId]);
@@ -45,19 +50,28 @@ const ContractForm = ({
         // contractNumber: contract.contractNumber || '',
         tenantId: contract.tenantId || '',
         roomId: contract.roomId || fixedRoomId || '',
-        startDate: contract.startDate ? new Date(contract.startDate).toISOString().split('T')[0] : '',
-        endDate: contract.endDate ? new Date(contract.endDate).toISOString().split('T')[0] : '',
+        startDate: toApiDate(contract.startDate),
+        endDate: toApiDate(contract.endDate),
         deposit: contract.deposit ?? '',
         rentalPrice: contract.rentalPrice || '',
         terms: contract.terms || '',
         notes: contract.notes || '',
-        status: contract.status || 'pending',
       });
       if (contract.fileUrl) {
         setFilePreview(contract.fileUrl);
       }
     }
   }, [contract]);
+
+  const computedStatus = useMemo(() => {
+    if (!formData.startDate || !formData.endDate) return 'pending';
+    return resolveContractStatus({
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      isTerminated: contract?.isTerminated,
+      status: contract?.status,
+    });
+  }, [formData.startDate, formData.endDate, contract]);
 
   const validateForm = () => {
     const errors = {};
@@ -269,22 +283,19 @@ const ContractForm = ({
               </div>
             )}
 
-            {/* Trạng thái */}
+            {/* Trạng thái (tự động theo ngày) */}
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-2">
                 Trạng thái
               </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus-visible:outline-accent-violet"
+              <p
+                className={`rounded-lg border px-3 py-2 text-sm font-medium ${getContractStatusColor(computedStatus)}`}
               >
-                <option value="pending">Chờ ký</option>
-                <option value="active">Còn hiệu lực</option>
-                <option value="expired">Hết hạn</option>
-                <option value="terminated">Đã chấm dứt</option>
-              </select>
+                {getContractStatusLabel(computedStatus)}
+                <span className="ml-1 block text-xs font-normal opacity-80">
+                  Tự động theo ngày bắt đầu / hết hạn
+                </span>
+              </p>
             </div>
 
             {/* Ngày bắt đầu */}
@@ -292,8 +303,7 @@ const ContractForm = ({
               <label className="block text-sm font-medium text-gray-900 mb-2">
                 Ngày bắt đầu *
               </label>
-              <input
-                type="date"
+              <DateInput
                 name="startDate"
                 value={formData.startDate}
                 onChange={handleChange}
@@ -310,8 +320,7 @@ const ContractForm = ({
               <label className="block text-sm font-medium text-gray-900 mb-2">
                 Ngày hết hạn *
               </label>
-              <input
-                type="date"
+              <DateInput
                 name="endDate"
                 value={formData.endDate}
                 onChange={handleChange}

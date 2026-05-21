@@ -6,6 +6,8 @@ import {
   VEHICLE_BRANDS,
   VEHICLE_COLORS,
 } from '../utils/vehicleHelpers';
+import DateInput from '../../../components/common/DateInput';
+import { toApiDate } from '../../../utils/dateHelpers';
 
 const VehicleForm = ({
   vehicle = null,
@@ -40,9 +42,7 @@ const VehicleForm = ({
         type: vehicle.type || 'motorcycle',
         brand: vehicle.brand || '',
         color: vehicle.color || '',
-        registrationDate: vehicle.registrationDate
-          ? new Date(vehicle.registrationDate).toISOString().split('T')[0]
-          : '',
+        registrationDate: toApiDate(vehicle.registrationDate),
         parkingFee: vehicle.parkingFee || '',
         tenantId: vehicle.tenantId || '',
         roomId: vehicle.roomId || '',
@@ -291,8 +291,7 @@ const VehicleForm = ({
               <label className="block text-sm font-medium text-gray-900 mb-2">
                 Ngày đăng ký *
               </label>
-              <input
-                type="date"
+              <DateInput
                 name="registrationDate"
                 value={formData.registrationDate}
                 onChange={handleChange}

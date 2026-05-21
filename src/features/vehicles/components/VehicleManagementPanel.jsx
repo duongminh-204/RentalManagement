@@ -29,6 +29,8 @@ import {
   getVehicleTypeLabel,
 } from '../utils/vehicleHelpers';
 import { resolveMediaUrl } from '../../rooms/utils/roomHelpers';
+import DateInput from '../../../components/common/DateInput';
+import { toApiDate } from '../../../utils/dateHelpers';
 
 const TABS = [
   { id: 'info', label: 'Thông tin', icon: Car },
@@ -48,15 +50,6 @@ const emptyForm = () => ({
   notes: '',
   status: 'active',
 });
-
-const toInputDate = (date) => {
-  if (!date) return '';
-  try {
-    return new Date(date).toISOString().split('T')[0];
-  } catch {
-    return '';
-  }
-};
 
 const VehicleManagementPanel = ({
   vehicle,
@@ -89,7 +82,7 @@ const VehicleManagementPanel = ({
         type: vehicle.type || 'motorcycle',
         brand: vehicle.brand || '',
         color: vehicle.color || '',
-        registrationDate: toInputDate(vehicle.registrationDate),
+        registrationDate: toApiDate(vehicle.registrationDate),
         parkingFee: vehicle.parkingFee ?? '',
         tenantId: vehicle.tenantId ? String(vehicle.tenantId) : '',
         roomId: vehicle.roomId ? String(vehicle.roomId) : '',
@@ -391,8 +384,7 @@ const VehicleManagementPanel = ({
                         <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase text-accent-violet-mid">
                           <Calendar size={12} /> Ngày đăng ký *
                         </label>
-                        <input
-                          type="date"
+                        <DateInput
                           name="registrationDate"
                           value={form.registrationDate}
                           onChange={handleChange}
